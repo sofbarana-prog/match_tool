@@ -27,7 +27,7 @@ jobs:
 
       - name: Scrape EU calls → calls.json
         run: python scrape_to_json.py --out calls.json
-        timeout-minutes: 60
+        timeout-minutes: 90
 
       - name: Commit calls.json if changed
         run: |
