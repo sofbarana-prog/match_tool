@@ -47,6 +47,8 @@
       Questo strumento suggerisce call coerenti con il profilo del progetto. Il filtro sul tipo di azione viene applicato solo alle call di Horizon Europe; gli altri programmi restano inclusi se coerenti con l'area tematica e con la timeline del progetto.
     </p>
 
+    <div id="lastUpdated" class="box muted" style="display:none;margin-bottom:14px"></div>
+    <div id="lastUpdated" style="display:none;color:#6b7280;font-size:.9rem;margin-bottom:12px;padding:10px 14px;background:#f7f7f7;border:1px solid #e9e9e9;border-radius:10px"></div>
     <form id="survey">
       <fieldset>
         <legend>1) Timeframe di chiusura del progetto</legend>
@@ -180,6 +182,13 @@
     try {
       const res = await fetch('./calls.json', { cache: 'no-store' });
       const data = await res.json();
+      if (data.generated) {
+        const d = new Date(data.generated);
+        const fmt = d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'})
+                  + ' ' + d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+        const el = document.getElementById('lastUpdated');
+        if (el) { el.textContent = `Dati aggiornati al: ${fmt} UTC`; el.style.display='block'; }
+      }
       return Array.isArray(data.calls) ? data.calls : [];
     } catch (e) { console.error(e); return []; }
   }
@@ -336,7 +345,7 @@
       .sort((a,b) => b._score !== a._score
         ? b._score - a._score
         : (a._deadline_norm||'').localeCompare(b._deadline_norm||''))
-      .slice(0, 200);
+      .slice(0, 30);
   }
 
   function renderResults(answers, filtered) {
