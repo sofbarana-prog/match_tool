@@ -2,26 +2,32 @@ name: Update EU Calls
 
 on:
   schedule:
-    - cron: "0 3 * * *"   # ogni notte alle 03:00 UTC
-  workflow_dispatch:       # permette anche il run manuale dal tab Actions
+    - cron: "0 2 * * *"   # ogni notte alle 02:00 UTC (04:00 ora italiana)
+  workflow_dispatch:       # run manuale dal tab Actions
 
 jobs:
-  fetch-and-commit:
+  scrape-and-commit:
     runs-on: ubuntu-latest
     permissions:
-      contents: write      # necessario per fare commit nel repo
+      contents: write
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          node-version: "20"
+          python-version: "3.12"
 
-      - name: Fetch calls from EU API
-        run: node fetch_calls.js
+      - name: Install dependencies
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Scrape EU calls → calls.json
+        run: python scrape_to_json.py --out calls.json
+        timeout-minutes: 60
 
       - name: Commit calls.json if changed
         run: |
