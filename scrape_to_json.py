@@ -385,59 +385,94 @@ def _first(meta, *keys):
             return v.strip()
     return ""
 
+def _enrich_one(page, row: dict) -> bool:
+    """Apre una pagina di dettaglio e cattura i campi mancanti via XHR.
+    Restituisce True se almeno un campo è stato recuperato."""
+    url      = row["url"]
+    captured = {}
+
+    def handle(response, _c=captured):
+        if SEARCH_API in response.url and response.status == 200:
+            try:
+                body = response.json()
+                for item in body.get("results", [body]):
+                    meta    = item.get("metadata", {}) or {}
+                    prog_id = _first(meta, "frameworkProgramme", "programme")
+                    action  = _first(meta, "typesOfAction","typeOfAction","fundingScheme")
+                    cid     = _first(meta, "callIdentifier","identifier")
+                    if prog_id and not _c.get("prog"):
+                        _c["prog"] = PROGRAMME_MAP.get(prog_id, prog_id)
+                    if action and not _c.get("action"):
+                        _c["action"] = action
+                    if cid and not _c.get("call_id"):
+                        _c["call_id"] = cid
+            except Exception:
+                pass
+
+    page.on("response", handle)
+    try:
+        page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+        page.wait_for_timeout(2500)
+    except Exception as e:
+        print(f"    [ERR goto] {e}", flush=True)
+    finally:
+        page.remove_listener("response", handle)
+
+    if captured.get("prog") and not row.get("programme_raw"):
+        row["programme_raw"] = captured["prog"]
+    if captured.get("action") and not row.get("action_raw"):
+        row["action_raw"] = captured["action"]
+    if captured.get("call_id") and not row.get("call_id"):
+        row["call_id"] = captured["call_id"]
+
+    return bool(captured)
+
+
 def enrich(ctx, rows: list):
     to_fix = [r for r in rows
               if (not r.get("programme_raw") or not r.get("action_raw") or not r.get("call_id"))
               and r.get("url")]
     if not to_fix:
-        print("  Tutti i campi già presenti ✓")
+        print("  Tutti i campi già presenti ✓", flush=True)
         return
 
     print(f"  {len(to_fix)} call da arricchire…", flush=True)
     page = ctx.new_page()
+    skipped = 0
 
     for idx, row in enumerate(to_fix, 1):
-        url = row["url"]
-        print(f"  [{idx:>4}/{len(to_fix)}] {(row['name'] or '')[:65]}", flush=True)
-        captured = {}
+        print(f"  [{idx:>4}/{len(to_fix)}] {(row['name'] or '')[:60]}", flush=True)
 
-        def handle(response, _c=captured):
-            if SEARCH_API in response.url and response.status == 200:
+        ok = False
+        for attempt in range(1, 3):   # max 2 tentativi per call
+            try:
+                ok = _enrich_one(page, row)
+                break
+            except Exception as e:
+                print(f"    [tentativo {attempt} fallito] {e}", flush=True)
+                # Ricrea la pagina se crashata
                 try:
-                    body = response.json()
-                    for item in body.get("results", [body]):
-                        meta = item.get("metadata", {}) or {}
-                        prog_id = _first(meta, "frameworkProgramme", "programme")
-                        action  = _first(meta, "typesOfAction","typeOfAction","fundingScheme")
-                        cid     = _first(meta, "callIdentifier","identifier")
-                        if prog_id and not _c.get("prog"):
-                            _c["prog"] = PROGRAMME_MAP.get(prog_id, prog_id)
-                        if action and not _c.get("action"):
-                            _c["action"] = action
-                        if cid and not _c.get("call_id"):
-                            _c["call_id"] = cid
+                    page.close()
                 except Exception:
                     pass
+                page = ctx.new_page()
+                time.sleep(2)
 
-        page.on("response", handle)
-        try:
-            page.goto(url, wait_until="networkidle", timeout=45_000)
-            page.wait_for_timeout(1000)
-        except Exception as e:
-            print(f"    [ERR] {e}", flush=True)
-        page.remove_listener("response", handle)
+        if not ok:
+            skipped += 1
+            print(f"    [SKIP] nessun dato recuperato", flush=True)
 
-        if captured.get("prog") and not row.get("programme_raw"):
-            row["programme_raw"] = captured["prog"]
-        if captured.get("action") and not row.get("action_raw"):
-            row["action_raw"] = captured["action"]
-        if captured.get("call_id") and not row.get("call_id"):
-            row["call_id"] = captured["call_id"]
+        # Salvataggio intermedio ogni 100 call (sicurezza in caso di crash)
+        if idx % 100 == 0:
+            print(f"  [checkpoint] salvate {idx} call finora…", flush=True)
 
-        time.sleep(0.2)
+        time.sleep(0.3)
 
-    print(f"  Arricchimento completato.", flush=True)
-    page.close()
+    try:
+        page.close()
+    except Exception:
+        pass
+    print(f"  Arricchimento completato. Saltate: {skipped}/{len(to_fix)}", flush=True)
 
 # ── Trasforma riga grezza → oggetto call classificato ─────────────────────────
 
@@ -572,7 +607,7 @@ def main(out_path: Path):
         json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    print(f"\n✅ Scritto {out_path} con {len(calls)} call")
+    print(f"\n Scritto {out_path} con {len(calls)} call")
 
 
 if __name__ == "__main__":
