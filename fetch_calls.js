@@ -223,18 +223,49 @@ function transform(item) {
 // ─── FETCH ALL PAGES ──────────────────────────────────────────────────────────
 
 async function fetchPage(page) {
+  // The EU API requires browser-like headers — plain requests get 405.
+  // Send GET with spoofed Origin/Referer to match what the portal does.
   const url =
     `${EU_API}?apiKey=SEDIA&text=***` +
     `&pageSize=${PAGE_SIZE}&pageNumber=${page}` +
-    `&query/status/code=31094501&query/status/code=31094502` +
-    `&query/programmePeriod/code=2021%20-%202027` +
+    `&query%2Fstatus%2Fcode=31094501&query%2Fstatus%2Fcode=31094502` +
+    `&query%2FprogrammePeriod%2Fcode=2021%20-%202027` +
     `&sortBy=startDate&order=DESC&languages=en`;
 
-  const resp = await fetch(url, {
-    headers: { Accept: "application/json" },
-  });
+  const headers = {
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Origin": "https://ec.europa.eu",
+    "Referer": "https://ec.europa.eu/info/funding-tenders/opportunities/portal/screen/opportunities/calls-for-proposals",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+  };
 
-  if (!resp.ok) throw new Error(`API error ${resp.status} on page ${page}`);
+  let resp = await fetch(url, { headers });
+
+  // Fallback: try POST if GET is blocked
+  if (resp.status === 405) {
+    console.log(`  GET blocked (405), retrying with POST on page ${page}…`);
+    resp = await fetch(EU_API, {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        apiKey: "SEDIA",
+        text: "***",
+        pageSize: PAGE_SIZE,
+        pageNumber: page,
+        sortBy: "startDate",
+        order: "DESC",
+        languages: ["en"],
+        "query/status/code": ["31094501", "31094502"],
+        "query/programmePeriod/code": ["2021 - 2027"],
+      }),
+    });
+  }
+
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => "");
+    throw new Error(`API error ${resp.status} on page ${page}: ${text.slice(0, 300)}`);
+  }
   return resp.json();
 }
 
