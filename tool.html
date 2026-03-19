@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Questionario Progetto — Tool call</title>
+  <style>
+    :root {
+      --max-width: 1100px;
+      --gap: 12px;
+      font-family: system-ui, Arial, sans-serif;
+    }
+    body {
+      margin: 24px;
+      display: flex;
+      justify-content: center;
+      background: #fafafa;
+    }
+    .page { width: 100%; max-width: var(--max-width); }
+    h1 { margin: 0 0 12px 0; }
+    fieldset {
+      border: 1px solid #e6e6e6;
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      background: #fff;
+    }
+    legend { font-weight: 700; padding: 0 8px; }
+    label { display: block; margin-top: 8px; font-weight: 600; }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--gap);
+      align-items: start;
+    }
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+      background: white;
+    }
+    .radio {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .radio label {
+      font-weight: 500;
+      margin: 0;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    button {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 0;
+      background: #2b7cff;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .secondary { background: #777; }
+    .box {
+      background: #f7f7f7;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #e9e9e9;
+      margin-bottom: 12px;
+    }
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      margin-right: 8px;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      background: white;
+    }
+    .call {
+      border: 1px solid #eee;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: white;
+    }
+    .call.mission {
+      border-left: 4px solid #f59e0b;
+      background: #fffbeb;
+    }
+    .call h3 { margin: 0 0 6px 0; font-size: 1rem; }
+    .mission-badge {
+      display: inline-block;
+      background: #f59e0b;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .meta {
+      color: #555;
+      font-size: 0.95rem;
+      margin-top: 6px;
+      word-break: break-word;
+    }
+    .muted { color: #666; font-size: 0.9rem; }
+    .error { color: #b30000; }
+    footer { margin-top: 18px; color: #666; font-size: 0.9rem; }
+    @media (max-width: 700px) {
+      .row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Questionario Progetto — Tool call</h1>
+
+    <form id="survey">
+      <fieldset>
+        <legend>1) Timeframe di chiusura del progetto</legend>
+        <div class="row">
+          <div>
+            <label for="closure_year">Anno di chiusura</label>
+            <select id="closure_year" name="closure_year" required>
+              <option value="" selected disabled>Seleziona…</option>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+            </select>
+          </div>
+          <div>
+            <label for="closure_quarter">Quadrimestre</label>
+            <select id="closure_quarter" name="closure_quarter" required>
+              <option value="" selected disabled>Seleziona…</option>
+              <option value="Q1">Q1</option>
+              <option value="Q2">Q2</option>
+              <option value="Q3">Q3</option>
+              <option value="Q4">Q4</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>2) Natura del progetto</legend>
+        <label>Tipologia ricerca</label>
+        <div class="radio">
+          <label><input type="radio" name="project_nature" value="basic" required> Basic research</label>
+          <label><input type="radio" name="project_nature" value="applied"> Applied research</label>
+          <label><input type="radio" name="project_nature" value="industrial"> Industrial research</label>
+        </div>
+
+        <label for="horizon_cluster">Cluster / Area tematica</label>
+        <select id="horizon_cluster" name="horizon_cluster" required>
+          <option value="" selected disabled>Seleziona…</option>
+          <optgroup label="Horizon Europe — Clusters">
+            <option value="1">Cluster 1: Health</option>
+            <option value="2">Cluster 2: Culture, Creativity and Inclusive Society</option>
+            <option value="3">Cluster 3: Civil Security for Society</option>
+            <option value="4">Cluster 4: Digital, Industry and Space</option>
+            <option value="5">Cluster 5: Climate, Energy and Mobility</option>
+            <option value="6">Cluster 6: Food, Bioeconomy, Natural Resources, Agriculture and Environment</option>
+          </optgroup>
+          <optgroup label="Horizon Europe — Missions">
+            <option value="M-CIT">Mission: Climate-neutral &amp; Smart Cities</option>
+            <option value="M-OCEAN">Mission: Healthy Oceans, Seas, Coastal &amp; Inland Waters</option>
+          </optgroup>
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <legend>3) Tipo di azione</legend>
+        <label for="action_type">Seleziona il tipo di azione</label>
+        <select id="action_type" name="action_type">
+          <option value="">Qualsiasi</option>
+          <option value="IA">Innovation Action (IA)</option>
+          <option value="RIA">Research and Innovation Action (RIA)</option>
+          <option value="CSA">Coordination and Support Action (CSA)</option>
+          <option value="COFUND">COFUND</option>
+          <option value="OTHER">Altro / non specificato</option>
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <legend>4) Beneficiario di altri schemi</legend>
+        <label for="other_schemes">Il progetto è già beneficiario di altri schemi?</label>
+        <select id="other_schemes" name="other_schemes" required>
+          <option value="" selected disabled>Seleziona…</option>
+          <option value="yes">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </fieldset>
+
+      <fieldset>
+        <legend>5) Tipologia partner</legend>
+        <label for="partner_type">Partner principale / tipologia</label>
+        <select id="partner_type" name="partner_type" required>
+          <option value="" selected disabled>Seleziona…</option>
+          <option value="research">Research organisation</option>
+          <option value="sme">SME</option>
+          <option value="large">Large enterprise</option>
+        </select>
+      </fieldset>
+
+      <div style="display:flex; gap:12px; margin-top:8px; align-items:center;">
+        <button type="submit">Genera suggerimento call</button>
+        <button type="button" id="resetBtn" class="secondary">Pulisci</button>
+      </div>
+    </form>
+
+    <section id="results" style="margin-top:18px;"></section>
+
+    <footer>
+      Per pubblicarlo online, carica questo file insieme a <code>calls.json</code>.
+    </footer>
+  </div>
+
+<script>
+(async function(){
+  const form = document.getElementById('survey');
+  const results = document.getElementById('results');
+  const resetBtn = document.getElementById('resetBtn');
+
+  let CALLS = [];
+
+  async function loadCalls(){
+    if (Array.isArray(window.CALLS_DATA)) return window.CALLS_DATA;
+    try {
+      const res = await fetch('./calls.json', { cache: 'no-store' });
+      const data = await res.json();
+      return Array.isArray(data.calls) ? data.calls : [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  }
+
+  CALLS = await loadCalls();
+
+  function escapeHtml(s){
+    if(!s) return '';
+    return String(s).replace(/[&<>"']/g, m => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]
+    ));
+  }
+
+  // ── Cluster matching ────────────────────────────────────────────────────────
+  // The select value is now either a numeric string ("1"…"6") or a mission ID
+  // ("M-CIT", "M-OCEAN"). Numeric clusters also capture CLIMA/CANCER/SOIL
+  // missions because make_calls_json maps them to cluster_num "5", "1", "6".
+  function clusterIdFromSelect(v){
+    return String(v || '').trim();
+  }
+
+  function clusterMatches(call, wantedId){
+    if (!wantedId) return true;
+    return call.cluster_num === wantedId;
+  }
+
+  function partnerTypeToBeneficiary(v){
+    if(v === 'research') return 'Research organisation';
+    if(v === 'sme') return 'SME';
+    if(v === 'large') return 'Large enterprise';
+    return '';
+  }
+
+  function projectEndIso(year, quarter){
+    if(!year || !quarter) return '';
+    const map = {
+      Q1: `${year}-03-31`,
+      Q2: `${year}-06-30`,
+      Q3: `${year}-09-30`,
+      Q4: `${year}-12-31`
+    };
+    return map[quarter] || '';
+  }
+
+  // ── Scoring ─────────────────────────────────────────────────────────────────
+  function scoreCall(call, answers){
+    let score = 0;
+
+    const wantedCluster   = clusterIdFromSelect(answers.horizon_cluster);
+    const wantedBenef     = partnerTypeToBeneficiary(answers.partner_type);
+    const projectEnd      = projectEndIso(answers.closure_year, answers.closure_quarter);
+    const wantedAction    = answers.action_type || '';
+
+    // Cluster / mission match
+    if (wantedCluster && call.cluster_num === wantedCluster) score += 50;
+
+    // Action type
+    if (wantedAction) {
+      const action = (call.action || '').toUpperCase();
+      if (wantedAction === 'OTHER') {
+        if (!action || !['IA','RIA','CSA','COFUND'].includes(action)) score += 40;
+      } else if (action === wantedAction) {
+        score += 40;
+      }
+    }
+
+    // Research nature → action affinity
+    if (answers.project_nature === 'basic') {
+      if (call.action === 'RIA') score += 30;
+      if (call.action === 'CSA') score += 20;
+    } else if (answers.project_nature === 'applied') {
+      if (call.action === 'RIA') score += 20;
+      if (call.action === 'IA')  score += 20;
+    } else if (answers.project_nature === 'industrial') {
+      if (call.action === 'IA')  score += 30;
+    }
+
+    // Beneficiary hint
+    if (wantedBenef && Array.isArray(call.beneficiary_hint)) {
+      if (call.beneficiary_hint.includes(wantedBenef)) score += 20;
+    }
+
+    // Not already funded elsewhere
+    if (answers.other_schemes === 'no') score += 5;
+
+    // Deadline after project end
+    if (projectEnd && call.deadline_iso && call.deadline_iso > projectEnd) {
+      score += 15;
+    }
+
+    // Small bonus for Mission calls (they are more specific / targeted)
+    if (call.is_mission) score += 10;
+
+    return score;
+  }
+
+  // ── Filter ──────────────────────────────────────────────────────────────────
+  function filterCalls(answers){
+    const wantedCluster = clusterIdFromSelect(answers.horizon_cluster);
+    const wantedAction  = answers.action_type || '';
+    const projectEnd    = projectEndIso(answers.closure_year, answers.closure_quarter);
+
+    let out = CALLS.map(c => ({ ...c, _score: scoreCall(c, answers) }));
+
+    // Hard filter: cluster / mission
+    if (wantedCluster) {
+      out = out.filter(c => clusterMatches(c, wantedCluster));
+    }
+
+    // Hard filter: action type
+    if (wantedAction) {
+      out = out.filter(c => {
+        const action = (c.action || '').toUpperCase();
+        if (wantedAction === 'OTHER') {
+          return !action || !['IA','RIA','CSA','COFUND'].includes(action);
+        }
+        return action === wantedAction;
+      });
+    }
+
+    // Hard filter: deadline must be after project closure
+    if (projectEnd) {
+      out = out.filter(c => c.deadline_iso && c.deadline_iso > projectEnd);
+    }
+
+    out = out
+      .filter(c => c._score > 0)
+      .sort((a, b) => {
+        if (b._score !== a._score) return b._score - a._score;
+        return (a.deadline_iso || '').localeCompare(b.deadline_iso || '');
+      });
+
+    return out.slice(0, 30);
+  }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+  function renderResults(answers, filtered){
+    const clusterLabel = document.getElementById('horizon_cluster')
+      .options[document.getElementById('horizon_cluster').selectedIndex]?.text || '';
+
+    const pills = [
+      `Chiusura: ${answers.closure_year || ''} ${answers.closure_quarter || ''}`,
+      `Natura: ${answers.project_nature || ''}`,
+      `Area: ${clusterLabel}`,
+      `Tipo di azione: ${answers.action_type || 'Qualsiasi'}`,
+      `Altri schemi: ${answers.other_schemes || ''}`,
+      `Partner: ${answers.partner_type || ''}`
+    ].map(t => `<span class="pill">${escapeHtml(t)}</span>`).join(' ');
+
+    let html = `<div class="box"><strong>Riepilogo risposte</strong><div style="margin-top:8px">${pills}</div></div>`;
+
+    if (!CALLS.length) {
+      html += `<div class="box error">
+        Non trovo dati. Controlla che <code>calls.json</code> esista e sia aggiornato.
+      </div>`;
+      results.innerHTML = html;
+      return;
+    }
+
+    html += `<h2 style="margin-top:14px;">Call suggerite (${filtered.length})</h2>`;
+
+    if (!filtered.length) {
+      html += `<div class="box">Nessuna call trovata con questi criteri.</div>`;
+      results.innerHTML = html;
+      return;
+    }
+
+    filtered.forEach(c => {
+      const missionBadge = c.is_mission
+        ? `<span class="mission-badge">Mission</span>` : '';
+
+      const meta = [
+        c.programme    ? `Programme: ${c.programme}` : '',
+        c.cluster_label? `Area: ${c.cluster_label}` : '',
+        c.action       ? `Type of action: ${c.action}` : '',
+        c.opening      ? `Opening: ${c.opening}` : '',
+        c.deadline     ? `Deadline: ${c.deadline}` : '',
+        c.budget       ? `Budget: ${c.budget}` : '',
+        `Score: ${c._score}`
+      ].filter(Boolean).join(' · ');
+
+      const cssClass = c.is_mission ? 'call mission' : 'call';
+
+      html += `<div class="${cssClass}">
+        <h3>${escapeHtml(c.name || '(senza nome)')}${missionBadge}</h3>
+        <div class="meta">${escapeHtml(meta)}</div>
+        ${c.url ? `<div class="meta">Link: <a href="${encodeURI(c.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(c.url)}</a></div>` : ''}
+      </div>`;
+    });
+
+    results.innerHTML = html;
+    results.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ── Events ──────────────────────────────────────────────────────────────────
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    const fd = new FormData(form);
+    const answers = {
+      closure_year:    fd.get('closure_year'),
+      closure_quarter: fd.get('closure_quarter'),
+      project_nature:  fd.get('project_nature'),
+      horizon_cluster: fd.get('horizon_cluster'),
+      action_type:     fd.get('action_type'),
+      other_schemes:   fd.get('other_schemes'),
+      partner_type:    fd.get('partner_type')
+    };
+    const filtered = filterCalls(answers);
+    renderResults(answers, filtered);
+  });
+
+  resetBtn.addEventListener('click', function(){
+    form.reset();
+    results.innerHTML = '';
+  });
+})();
+</script>
+</body>
+</html>
