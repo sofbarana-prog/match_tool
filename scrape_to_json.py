@@ -393,12 +393,12 @@ def enrich(ctx, rows: list):
         print("  Tutti i campi già presenti ✓")
         return
 
-    print(f"  {len(to_fix)} call da arricchire…")
+    print(f"  {len(to_fix)} call da arricchire…", flush=True)
     page = ctx.new_page()
 
     for idx, row in enumerate(to_fix, 1):
         url = row["url"]
-        print(f"  [{idx:>4}/{len(to_fix)}] {(row['name'] or '')[:65]}")
+        print(f"  [{idx:>4}/{len(to_fix)}] {(row['name'] or '')[:65]}", flush=True)
         captured = {}
 
         def handle(response, _c=captured):
@@ -424,7 +424,7 @@ def enrich(ctx, rows: list):
             page.goto(url, wait_until="networkidle", timeout=45_000)
             page.wait_for_timeout(1000)
         except Exception as e:
-            print(f"    [ERR] {e}")
+            print(f"    [ERR] {e}", flush=True)
         page.remove_listener("response", handle)
 
         if captured.get("prog") and not row.get("programme_raw"):
@@ -436,6 +436,7 @@ def enrich(ctx, rows: list):
 
         time.sleep(0.2)
 
+    print(f"  Arricchimento completato.", flush=True)
     page.close()
 
 # ── Trasforma riga grezza → oggetto call classificato ─────────────────────────
@@ -539,7 +540,8 @@ def main(out_path: Path):
             time.sleep(0.1)
 
         # ── Passo 2: arricchimento ────────────────────────────────────────────
-        print(f"\n═══ Passo 2: arricchimento ═══")
+        needs = [r for r in rows if not r.get("programme_raw") or not r.get("action_raw") or not r.get("call_id")]
+        print(f"\n═══ Passo 2: arricchimento {len(needs)} call su {len(rows)} totali ═══", flush=True)
         enrich(ctx, rows)
         browser.close()
 
