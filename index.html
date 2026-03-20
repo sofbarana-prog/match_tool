@@ -37,6 +37,12 @@
     .muted { color: var(--muted); font-size: 0.9rem; }
     .error { color: #b30000; }
     footer { margin-top: 20px; color: var(--muted); font-size: 0.9rem; }
+    .cumul-note {
+      margin-top: 8px; padding: 7px 10px; background: #f0f7ff;
+      border-left: 3px solid #2563eb; border-radius: 0 6px 6px 0;
+      font-size: 0.87rem; color: #1e3a5f; line-height: 1.45;
+    }
+    .cumul-note strong { font-weight: 600; }
     @media (max-width: 760px) { .row { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -136,13 +142,17 @@
       </fieldset>
 
       <fieldset>
-        <legend>5) Beneficiario di altri schemi</legend>
-        <label for="other_schemes">Il progetto è già beneficiario di altri schemi?</label>
+        <legend>5) Co-finanziamento per gli stessi costi</legend>
+        <label for="other_schemes">Il progetto è già co-finanziato da un altro programma UE per gli stessi costi?</label>
         <select id="other_schemes" name="other_schemes" required>
           <option value="" selected disabled>Seleziona…</option>
-          <option value="yes">Sì</option>
-          <option value="no">No</option>
+          <option value="yes">Sì — un altro programma copre già parte degli stessi costi</option>
+          <option value="no">No — Horizon Europe è l'unica fonte di finanziamento attuale</option>
         </select>
+        <p style="margin:6px 0 0;font-size:0.88rem;color:#6b7280;">
+          Il progetto è considerato già finanziato da Horizon Europe.
+          Questa domanda riguarda eventuali ulteriori fonti che coprono gli <em>stessi</em> costi.
+        </p>
       </fieldset>
 
       <fieldset>
@@ -348,6 +358,36 @@
       .slice(0, 30);
   }
 
+  // ── Cumulation notes (Option 3) ─────────────────────────────────────────────
+  // Context: the project is always financed by Horizon Europe.
+  // These notes describe the cumulation relationship between HE and the
+  // programme of each suggested call, based on the actual regulatory text.
+  const CUMULATION_NOTES = {
+    // Direct sequential synergy explicitly encouraged
+    "Horizon Europe":          null,  // same programme family — no note needed
+    "LIFE":                    "Sequential co-financing with Horizon Europe is explicitly encouraged (LIFE Reg. Art. 16). The action must pursue environmental or climate objectives and must not undermine them. Seal of Excellence pathway available towards ERDF/ESF+/EAFRD.",
+    "InvestEU":                "Sequential financing model: Horizon Europe covers the R&I phase; InvestEU financial instruments support scale-up and commercialisation of bankable results (HE Reg. Annex IV).",
+    "Digital Europe Programme":"Cumulation explicitly permitted in sequential, alternating, or combined form, provided no cost overlap (DEP Reg. Art. 6). Complementarity between research (HE) and deployment/infrastructure (DEP) is the intended model.",
+    "Connecting Europe Facility (CEF)": "Cumulation permitted, no cost overlap required. CEF Seal of Excellence pathway available towards ERDF/Cohesion Fund. €10bn of Cohesion Fund resources transferred to CEF (CEF Reg. 2021/1153).",
+    "Erasmus+":                "Cumulation permitted, no cost overlap required (Erasmus+ Reg. Art. 23). Seal of Excellence pathway available towards ERDF/ESF+.",
+    "Creative Europe (CREA)":  "Cumulation with any EU funding permitted. ERDF resources may be transferred to CREA at Member State request under CPR Art. 26.",
+    "EU4Health":               "Cumulation with any Union programme including shared management funds explicitly permitted, provided no cost overlap (EU4Health Reg. Art. 20).",
+    "Internal Security Fund (ISF)": "Cumulation with any Union programme including shared management funds permitted, no cost overlap (ISF Reg.). Seal of Excellence pathway available towards ERDF/ESF+.",
+    "European Defence Fund":   "Operates under a separate legal framework (EDF Reg. 2021/697). Cumulation with civilian programmes is permitted only for the non-defence components of dual-use projects. Civilian-only rule under review for FP10.",
+    // Shared management — general CPR rule applies
+    "default":                 "Cumulation permitted provided no cost overlap (universal rule, Art. 22(4) HE Reg.). Contributions from different programmes may be calculated on a pro-rata basis. Cumulative funding cannot exceed total eligible costs.",
+  };
+
+  function getCumulationNote(programme) {
+    if (!programme) return CUMULATION_NOTES['default'];
+    const p = programme.toLowerCase();
+    for (const [key, note] of Object.entries(CUMULATION_NOTES)) {
+      if (key === 'default') continue;
+      if (p.includes(key.toLowerCase())) return note;
+    }
+    return CUMULATION_NOTES['default'];
+  }
+
   function renderResults(answers, filtered) {
     const pills = [
       `Chiusura: ${answers.closure_year||''} ${answers.closure_quarter||''}`,
@@ -355,7 +395,7 @@
       `Cluster tematico: ${answers.thematic_cluster||''}`,
       `Cluster Horizon: ${answers.official_cluster||'Qualsiasi'}`,
       `Tipo di azione: ${answers.action_type||'Qualsiasi'}`,
-      `Altri schemi: ${answers.other_schemes||''}`,
+      `Co-finanziamento stessi costi: ${answers.other_schemes === 'yes' ? 'Sì' : answers.other_schemes === 'no' ? 'No' : ''}`,
       `Partner: ${answers.partner_type||''}`
     ].map(t => `<span class="pill">${escapeHtml(t)}</span>`).join(' ');
 
@@ -386,9 +426,15 @@
         c.budget          ? `Budget: ${c.budget}` : '',
       ].filter(Boolean).join(' · ');
 
+      const cumulNote = getCumulationNote(c.programme);
+      const cumulHtml = cumulNote
+        ? `<div class="cumul-note">&#9432; <strong>Cumulation with Horizon Europe:</strong> ${escapeHtml(cumulNote)}</div>`
+        : '';
+
       html += `<div class="${c.is_mission ? 'call mission' : 'call'}">
         <h3>${escapeHtml(c.name||'(senza nome)')}${badge}</h3>
         <div class="meta">${escapeHtml(meta)}</div>
+        ${cumulHtml}
         ${c.url ? `<div class="meta">Link: <a href="${encodeURI(c.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(c.url)}</a></div>` : ''}
       </div>`;
     });
