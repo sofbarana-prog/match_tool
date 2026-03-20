@@ -114,6 +114,11 @@
         </select>
 
         <label for="official_cluster" style="margin-top:14px;">Cluster Horizon Europe ufficiale (opzionale)</label>
+        <p style="margin:4px 0 6px;font-size:0.85rem;color:#6b7280;line-height:1.4;">
+          &#9432; Selezionando un cluster specifico, i risultati saranno filtrati alle <strong>sole call di Horizon Europe</strong>
+          appartenenti a quel cluster. Le call degli altri programmi coerenti con l'area tematica resteranno escluse.
+          Lascia vuoto per includere tutti i programmi.
+        </p>
         <select id="official_cluster" name="official_cluster">
           <option value="">Qualsiasi / non applicabile</option>
           <optgroup label="Clusters">
@@ -141,29 +146,15 @@
         </select>
       </fieldset>
 
-      <fieldset>
-        <legend>5) Co-finanziamento per gli stessi costi</legend>
-        <label for="other_schemes">Il progetto è già co-finanziato da un altro programma UE per gli stessi costi?</label>
-        <select id="other_schemes" name="other_schemes" required>
-          <option value="" selected disabled>Seleziona…</option>
-          <option value="yes">Sì — un altro programma copre già parte degli stessi costi</option>
-          <option value="no">No — Horizon Europe è l'unica fonte di finanziamento attuale</option>
-        </select>
-        <p style="margin:6px 0 0;font-size:0.88rem;color:#6b7280;">
-          Il progetto è considerato già finanziato da Horizon Europe.
-          Questa domanda riguarda eventuali ulteriori fonti che coprono gli <em>stessi</em> costi.
+      <fieldset style="background:#fff8ed;border-color:#f59e0b;">
+        <legend style="color:#92400e;">&#9432; Nota sul co-finanziamento</legend>
+        <p style="margin:4px 0;font-size:0.93rem;line-height:1.5;color:#1f2937;">
+          Questo strumento presuppone che il progetto sia già finanziato da <strong>Horizon Europe</strong>.
+          Le call suggerite possono essere usate come fonte di co-finanziamento o di finanziamento sequenziale,
+          nel rispetto della regola universale: <em>le stesse voci di costo non possono essere coperte due volte</em>
+          da programmi diversi (Art. 22(4) Reg. UE 2021/695).
+          Per ciascuna call suggerita è indicato il regime specifico di cumulation con Horizon Europe.
         </p>
-      </fieldset>
-
-      <fieldset>
-        <legend>6) Tipologia partner</legend>
-        <label for="partner_type">Partner principale / tipologia</label>
-        <select id="partner_type" name="partner_type" required>
-          <option value="" selected disabled>Seleziona…</option>
-          <option value="research">Research organisation</option>
-          <option value="sme">SME</option>
-          <option value="large">Large enterprise</option>
-        </select>
       </fieldset>
 
       <div class="actions">
@@ -231,12 +222,6 @@
     return String(programme || '').toLowerCase().includes('horizon');
   }
 
-  function partnerTypeToBeneficiary(v) {
-    if (v === 'research') return 'Research organisation';
-    if (v === 'sme') return 'SME';
-    if (v === 'large') return 'Large enterprise';
-    return '';
-  }
 
   function projectEndIso(year, quarter) {
     if (!year || !quarter) return '';
@@ -269,8 +254,6 @@
     const wantedOfficial = normalizeCluster(answers.official_cluster);
     const wantedAction   = answers.action_type || '';
     const projectEnd     = projectEndIso(answers.closure_year, answers.closure_quarter);
-    const wantedBenef    = partnerTypeToBeneficiary(answers.partner_type);
-
     const callThematic = String(call.thematic_cluster || '').trim();
     const callOfficial = normalizeCluster(call.cluster_num);
     const callAction   = normalizeAction(call.action);
@@ -304,10 +287,7 @@
       if (callAction === 'IA')  score += 20;
     }
 
-    if (wantedBenef && Array.isArray(call.beneficiary_hint) &&
-        call.beneficiary_hint.includes(wantedBenef)) score += 15;
 
-    if (answers.other_schemes === 'no') score += 5;
     if (projectEnd && deadlineIso && deadlineIso > projectEnd) score += 15;
     if (call.is_mission) score += 10;
 
@@ -365,16 +345,17 @@
   const CUMULATION_NOTES = {
     // Direct sequential synergy explicitly encouraged
     "Horizon Europe":          null,  // same programme family — no note needed
-    "LIFE":                    "Sequential co-financing with Horizon Europe is explicitly encouraged (Regulation (EU) 2021/783 Art. 16). The action must pursue environmental or climate objectives and must not undermine them. Seal of Excellence pathway available towards ERDF/ESF+/EAFRD.",
-    "Digital Europe Programme":"Cumulation explicitly permitted in sequential, alternating, or combined form, provided no cost overlap (Regulation (EU) 2021/694 Arts. 13, 23). Complementarity between research (HE) and deployment/infrastructure (DEP) is the intended model.",
-    "Connecting Europe Facility (CEF)": "Cumulation permitted, no cost overlap required. CEF Seal of Excellence pathway available towards ERDF/Cohesion Fund. (Regulation (EU) 2021/1153, Art. 19).",
-    "Erasmus+":                "Cumulation permitted, no cost overlap required (Regulation (EU) 2021/817, Art. 32). Seal of Excellence pathway available towards ERDF/ESF+.",
-    "Creative Europe (CREA)":  "Cumulation with any EU funding permitted. ERDF resources may be transferred to CREA at Member State request under REGULATION (EU) 2021/818 Art. 19.",
-    "EU4Health":               "Cumulation with any Union programme including shared management funds explicitly permitted, provided no cost overlap (Regulation (EU) 2021/522, Art. 11).",
-    "Internal Security Fund (ISF)": "Cumulation with any Union programme including shared management funds permitted, no cost overlap (Regulation (EU) 2021/1149, Art. 26). Seal of Excellence pathway available towards ERDF/ESF+.",
+    "LIFE":                    "Sequential co-financing with Horizon Europe is explicitly encouraged (LIFE Reg. Art. 16). The action must pursue environmental or climate objectives and must not undermine them. Seal of Excellence pathway available towards ERDF/ESF+/EAFRD.",
+    "InvestEU":                "Sequential financing model: Horizon Europe covers the R&I phase; InvestEU financial instruments support scale-up and commercialisation of bankable results (HE Reg. Annex IV).",
+    "Digital Europe Programme":"Cumulation explicitly permitted in sequential, alternating, or combined form, provided no cost overlap (DEP Reg. Art. 6). Complementarity between research (HE) and deployment/infrastructure (DEP) is the intended model.",
+    "Connecting Europe Facility (CEF)": "Cumulation permitted, no cost overlap required. CEF Seal of Excellence pathway available towards ERDF/Cohesion Fund. €10bn of Cohesion Fund resources transferred to CEF (CEF Reg. 2021/1153).",
+    "Erasmus+":                "Cumulation permitted, no cost overlap required (Erasmus+ Reg. Art. 23). Seal of Excellence pathway available towards ERDF/ESF+.",
+    "Creative Europe (CREA)":  "Cumulation with any EU funding permitted. ERDF resources may be transferred to CREA at Member State request under CPR Art. 26.",
+    "EU4Health":               "Cumulation with any Union programme including shared management funds explicitly permitted, provided no cost overlap (EU4Health Reg. Art. 20).",
+    "Internal Security Fund (ISF)": "Cumulation with any Union programme including shared management funds permitted, no cost overlap (ISF Reg.). Seal of Excellence pathway available towards ERDF/ESF+.",
     "European Defence Fund":   "Operates under a separate legal framework (EDF Reg. 2021/697). Cumulation with civilian programmes is permitted only for the non-defence components of dual-use projects. Civilian-only rule under review for FP10.",
     // Shared management — general CPR rule applies
-    "default":                 "Cumulation permitted provided no cost overlap (Art. 15 Regulation (EU) 2021/695). Contributions from different programmes may be calculated on a pro-rata basis. Cumulative funding cannot exceed total eligible costs.",
+    "default":                 "Cumulation permitted provided no cost overlap (universal rule, Art. 22(4) HE Reg.). Contributions from different programmes may be calculated on a pro-rata basis. Cumulative funding cannot exceed total eligible costs.",
   };
 
   function getCumulationNote(programme) {
@@ -394,8 +375,7 @@
       `Cluster tematico: ${answers.thematic_cluster||''}`,
       `Cluster Horizon: ${answers.official_cluster||'Qualsiasi'}`,
       `Tipo di azione: ${answers.action_type||'Qualsiasi'}`,
-      `Co-finanziamento stessi costi: ${answers.other_schemes === 'yes' ? 'Sì' : answers.other_schemes === 'no' ? 'No' : ''}`,
-      `Partner: ${answers.partner_type||''}`
+
     ].map(t => `<span class="pill">${escapeHtml(t)}</span>`).join(' ');
 
     let html = `<div class="box"><strong>Riepilogo risposte</strong><div style="margin-top:8px">${pills}</div></div>`;
@@ -449,7 +429,7 @@
       closure_year: fd.get('closure_year'), closure_quarter: fd.get('closure_quarter'),
       project_nature: fd.get('project_nature'), thematic_cluster: fd.get('thematic_cluster'),
       official_cluster: fd.get('official_cluster'), action_type: fd.get('action_type'),
-      other_schemes: fd.get('other_schemes'), partner_type: fd.get('partner_type')
+      other_schemes: 'no'  // assumed: project is Horizon Europe funded, no same-cost co-financing
     };
     renderResults(answers, filterCalls(answers));
   });
