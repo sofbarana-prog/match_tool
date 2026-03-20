@@ -84,9 +84,10 @@
 
       <fieldset>
         <legend>2) Natura del progetto</legend>
-        <label>Tipologia ricerca</label>
+        <label>Tipologia ricerca <span style="font-weight:400;color:#6b7280;">(opzionale)</span></label>
         <div class="radio">
-          <label><input type="radio" name="project_nature" value="basic" required> Basic research</label>
+          <label><input type="radio" name="project_nature" value=""> Qualsiasi</label>
+          <label><input type="radio" name="project_nature" value="basic"> Basic research</label>
           <label><input type="radio" name="project_nature" value="applied"> Applied research</label>
           <label><input type="radio" name="project_nature" value="industrial"> Industrial research</label>
         </div>
@@ -392,7 +393,7 @@
         c.budget          ? `Budget: ${c.budget}` : '',
       ].filter(Boolean).join(' · ');
 
-      const cumulNote = getCumulationNote(c.programme);
+      const cumulNote = isHorizonProgramme(c.programme) ? null : getCumulationNote(c.programme);
       const cumulHtml = cumulNote
         ? `<div class="cumul-note">&#9432; <strong>Cumulation with Horizon Europe:</strong> ${escapeHtml(cumulNote)}</div>`
         : '';
