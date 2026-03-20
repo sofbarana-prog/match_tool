@@ -520,6 +520,122 @@ def to_call(row: dict) -> dict:
         "beneficiary_hint": beneficiary_hint(action, prog_raw, u_benef),
     }
 
+# ── Changelog ────────────────────────────────────────────────────────────────
+
+def write_changelog(old_calls: list, new_calls: list, changelog_path: Path, generated: str):
+    """
+    Confronta old_calls e new_calls per URL.
+    Scrive changelog.md con call aggiunte, rimosse e statistiche.
+    Aggiunge una riga anche a changelog_history.md (log cumulativo).
+    """
+    old_by_url = {c["url"]: c for c in old_calls}
+    new_by_url = {c["url"]: c for c in new_calls}
+
+    old_urls = set(old_by_url)
+    new_urls = set(new_by_url)
+
+    added   = [new_by_url[u] for u in sorted(new_urls - old_urls)]
+    removed = [old_by_url[u] for u in sorted(old_urls - new_urls)]
+
+    # Conta per area tematica
+    def thematic_counts(calls):
+        tc = {}
+        for c in calls:
+            k = c.get("thematic_cluster") or "(non classificato)"
+            tc[k] = tc.get(k, 0) + 1
+        return tc
+
+    date_str = generated[:10]  # YYYY-MM-DD
+
+    lines = []
+    lines.append(f"# Changelog calls.json")
+    lines.append(f"")
+    lines.append(f"**Ultimo aggiornamento:** {generated.replace('T',' ').replace('+00:00',' UTC')[:22]}")
+    lines.append(f"")
+    lines.append(f"## Riepilogo")
+    lines.append(f"")
+    lines.append(f"| | Numero |")
+    lines.append(f"|---|---|")
+    lines.append(f"| Call totali (nuovo) | {len(new_calls)} |")
+    lines.append(f"| Call totali (precedente) | {len(old_calls)} |")
+    lines.append(f"| **Nuove call aggiunte** | **{len(added)}** |")
+    lines.append(f"| Call rimosse (scadute/chiuse) | {len(removed)} |")
+    lines.append(f"")
+
+    if added:
+        lines.append(f"## Call aggiunte ({len(added)})")
+        lines.append(f"")
+        # Group by thematic
+        by_thematic = {}
+        for c in added:
+            t = c.get("thematic_cluster") or "(non classificato)"
+            by_thematic.setdefault(t, []).append(c)
+        for thematic, calls in sorted(by_thematic.items()):
+            lines.append(f"### {thematic} ({len(calls)})")
+            lines.append(f"")
+            for c in calls:
+                name    = c.get("name") or "(senza nome)"
+                prog    = c.get("programme") or ""
+                action  = c.get("action") or ""
+                dead    = c.get("deadline") or ""
+                url     = c.get("url") or ""
+                meta = " · ".join(filter(None, [prog, action, f"Scadenza: {dead}" if dead else ""]))
+                lines.append(f"- **{name}**")
+                if meta:
+                    lines.append(f"  {meta}")
+                if url:
+                    lines.append(f"  {url}")
+                lines.append(f"")
+    else:
+        lines.append(f"## Call aggiunte")
+        lines.append(f"")
+        lines.append(f"Nessuna nuova call rispetto alla rilevazione precedente.")
+        lines.append(f"")
+
+    if removed:
+        lines.append(f"## Call rimosse ({len(removed)})")
+        lines.append(f"")
+        for c in removed:
+            name = c.get("name") or "(senza nome)"
+            prog = c.get("programme") or ""
+            dead = c.get("deadline") or ""
+            meta = " · ".join(filter(None, [prog, f"Scadenza: {dead}" if dead else ""]))
+            lines.append(f"- **{name}**{(' — ' + meta) if meta else ''}")
+        lines.append(f"")
+
+    lines.append(f"## Distribuzione per area tematica (nuovo dataset)")
+    lines.append(f"")
+    lines.append(f"| Area tematica | Call |")
+    lines.append(f"|---|---|")
+    for k, v in sorted(thematic_counts(new_calls).items(), key=lambda x: -x[1]):
+        lines.append(f"| {k} | {v} |")
+    lines.append(f"")
+
+    changelog_path.write_text("\n".join(lines), encoding="utf-8")
+    print(f"\n📋 Changelog scritto: {changelog_path} (+{len(added)} aggiunte, -{len(removed)} rimosse)")
+
+    # Aggiorna history cumulativa
+    history_path = changelog_path.parent / "changelog_history.md"
+    history_line = (
+        f"| {date_str} | {len(new_calls)} | +{len(added)} | -{len(removed)} |"
+    )
+    if history_path.exists():
+        hist = history_path.read_text(encoding="utf-8")
+        # Aggiunge riga dopo l'header della tabella
+        if history_line not in hist:
+            hist = hist.rstrip() + "\n" + history_line + "\n"
+            history_path.write_text(hist, encoding="utf-8")
+    else:
+        header = (
+            "# Storico aggiornamenti calls.json\n\n"
+            "| Data | Call totali | Aggiunte | Rimosse |\n"
+            "|---|---|---|---|\n"
+            + history_line + "\n"
+        )
+        history_path.write_text(header, encoding="utf-8")
+    print(f"📋 History aggiornata: {history_path}")
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main(out_path: Path):
@@ -599,15 +715,31 @@ def main(out_path: Path):
         print(f"  {v:5d}  {k}")
     print(f"\nNon classificati: {tc.get('(non classificato)', 0)}")
 
+    generated = datetime.now(timezone.utc).isoformat()
+
+    # ── Changelog: confronta con il dataset precedente ────────────────────────
+    old_calls = []
+    if out_path.exists():
+        try:
+            old_data = json.loads(out_path.read_text(encoding="utf-8"))
+            old_calls = old_data.get("calls", [])
+            print(f"\nDataset precedente: {len(old_calls)} call")
+        except Exception:
+            print("\nNessun dataset precedente trovato.")
+
+    changelog_path = out_path.parent / "changelog.md"
+    write_changelog(old_calls, calls, changelog_path, generated)
+
+    # ── Salva nuovo dataset ───────────────────────────────────────────────────
     payload = {
-        "generated": datetime.now(timezone.utc).isoformat(),
+        "generated": generated,
         "calls": calls,
     }
     out_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    print(f"\n Scritto {out_path} con {len(calls)} call")
+    print(f"\n✅ Scritto {out_path} con {len(calls)} call")
 
 
 if __name__ == "__main__":
