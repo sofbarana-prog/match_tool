@@ -341,20 +341,9 @@
   // Context: the project is always financed by Horizon Europe.
   // These notes describe the cumulation relationship between HE and the
   // programme of each suggested call, based on the actual regulatory text.
-  const CUMULATION_NOTES = {
-    // Direct sequential synergy explicitly encouraged
-    "Horizon Europe":          null,  // same programme family — no note needed
-    "LIFE":                    "Sequential co-financing with Horizon Europe is explicitly encouraged (LIFE Reg. Art. 16). The action must pursue environmental or climate objectives and must not undermine them. Seal of Excellence pathway available towards ERDF/ESF+/EAFRD.",
-    "InvestEU":                "Sequential financing model: Horizon Europe covers the R&I phase; InvestEU financial instruments support scale-up and commercialisation of bankable results (HE Reg. Annex IV).",
-    "Digital Europe Programme":"Cumulation explicitly permitted in sequential, alternating, or combined form, provided no cost overlap (DEP Reg. Art. 6). Complementarity between research (HE) and deployment/infrastructure (DEP) is the intended model.",
-    "Connecting Europe Facility (CEF)": "Cumulation permitted, no cost overlap required. CEF Seal of Excellence pathway available towards ERDF/Cohesion Fund. €10bn of Cohesion Fund resources transferred to CEF (CEF Reg. 2021/1153).",
-    "Erasmus+":                "Cumulation permitted, no cost overlap required (Erasmus+ Reg. Art. 23). Seal of Excellence pathway available towards ERDF/ESF+.",
-    "Creative Europe (CREA)":  "Cumulation with any EU funding permitted. ERDF resources may be transferred to CREA at Member State request under CPR Art. 26.",
-    "EU4Health":               "Cumulation with any Union programme including shared management funds explicitly permitted, provided no cost overlap (EU4Health Reg. Art. 20).",
-    "Internal Security Fund (ISF)": "Cumulation with any Union programme including shared management funds permitted, no cost overlap (ISF Reg.). Seal of Excellence pathway available towards ERDF/ESF+.",
-    "European Defence Fund":   "Operates under a separate legal framework (EDF Reg. 2021/697). Cumulation with civilian programmes is permitted only for the non-defence components of dual-use projects. Civilian-only rule under review for FP10.",
+    "European Defence Fund":   "Operates under a separate legal framework (EDF Reg. 2021/697). Cumulation with civilian programmes is permitted only for the non-defence components of dual-use projects.",
     // Shared management — general CPR rule applies
-    "default":                 "Cumulation permitted provided no cost overlap (universal rule, Art. 22(4) HE Reg.). Contributions from different programmes may be calculated on a pro-rata basis. Cumulative funding cannot exceed total eligible costs.",
+    "default":                 "Cumulation permitted provided no cost overlap. Contributions from different programmes may be calculated on a pro-rata basis. Cumulative funding cannot exceed total eligible costs.",
   };
 
   function getCumulationNote(programme) {
