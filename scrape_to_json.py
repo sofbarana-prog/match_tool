@@ -668,7 +668,7 @@ def main(out_path: Path):
             browser.close()
             return
         max_pages = math.ceil(total / PAGE_SIZE)
-        print(f"✅ Totale: {total} call | pagine: {max_pages}")
+        print(f"Totale: {total} call | pagine: {max_pages}")
 
         for pnum in range(1, max_pages + 1):
             remaining = total - (pnum - 1) * PAGE_SIZE
@@ -739,7 +739,7 @@ def main(out_path: Path):
         json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    print(f"\n✅ Scritto {out_path} con {len(calls)} call")
+    print(f"\n Scritto {out_path} con {len(calls)} call")
 
 
 if __name__ == "__main__":
