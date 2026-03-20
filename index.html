@@ -54,7 +54,6 @@
     </p>
 
     <div id="lastUpdated" class="box muted" style="display:none;margin-bottom:14px"></div>
-    <div id="lastUpdated" style="display:none;color:#6b7280;font-size:.9rem;margin-bottom:12px;padding:10px 14px;background:#f7f7f7;border:1px solid #e9e9e9;border-radius:10px"></div>
     <form id="survey">
       <fieldset>
         <legend>1) Timeframe di chiusura del progetto</legend>
@@ -363,8 +362,7 @@
       `Natura: ${answers.project_nature||''}`,
       `Cluster tematico: ${answers.thematic_cluster||''}`,
       `Cluster Horizon: ${answers.official_cluster||'Qualsiasi'}`,
-      `Tipo di azione: ${answers.action_type||'Qualsiasi'}`,
-
+      `Tipo di azione: ${answers.action_type||'Qualsiasi'}`
     ].map(t => `<span class="pill">${escapeHtml(t)}</span>`).join(' ');
 
     let html = `<div class="box"><strong>Riepilogo risposte</strong><div style="margin-top:8px">${pills}</div></div>`;
