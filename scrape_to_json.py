@@ -1,13 +1,14 @@
+#!/usr/bin/env python3
 """
-scrape_to_json.py
-─────────────────
-Scrapa il portale EU Funding & Tenders con Playwright e produce calls.json
-direttamente, senza passare per Excel.
-Incorpora tutta la logica di classificazione di make_calls_json.py.
+scrape_to_json_fulltext.py
+──────────────────────────
+Scrapa il portale EU Funding & Tenders con Playwright e produce calls.json.
+In più apre ogni pagina di dettaglio e salva anche il testo completo della call,
+così il frontend può fare word search full-text su un campo locale (search_blob).
 
 Uso:
-    python scrape_to_json.py              # scrive calls.json nella cartella corrente
-    python scrape_to_json.py --out /path  # percorso custom
+    python scrape_to_json_fulltext.py
+    python scrape_to_json_fulltext.py --out calls.json
 """
 
 import re
@@ -20,7 +21,7 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-# ── Parametri ─────────────────────────────────────────────────────────────────
+# ── Parametri ────────────────────────────────────────────────────────────────
 
 PAGE_SIZE = 50
 
@@ -31,7 +32,7 @@ LIST_URL = (
     "&isExactMatch=true&status=31094501,31094502&programmePeriod=2021%20-%202027"
 )
 
-SEARCH_API  = "search-api/prod/rest/search"
+SEARCH_API = "search-api/prod/rest/search"
 COOKIE_TEXT = "This site uses cookies"
 
 LINK_SELECTOR = (
@@ -40,21 +41,42 @@ LINK_SELECTOR = (
     'a[href*="/prospect-details/"]'
 )
 
-RE_TOTAL     = re.compile(r"(\d+)\s*item\s*\(s\)\s*found", re.IGNORECASE)
-RE_OPEN      = re.compile(r"Opening date:\s*([^\|\n\r]+)",          re.IGNORECASE)
-RE_DEAD      = re.compile(r"Deadline date:\s*([^\|\n\r]+)",         re.IGNORECASE)
-RE_NEXT_DEAD = re.compile(r"Next deadline:\s*([^\|\n\r]+)",         re.IGNORECASE)
-RE_PROG      = re.compile(r"Programme:\s*([^\|\n\r]+)",             re.IGNORECASE)
-RE_ACTION    = re.compile(r"Type of action:\s*([^\|\n\r]+)",        re.IGNORECASE)
-RE_CLUSTER   = re.compile(r"HORIZON-CL([1-6])",                     re.IGNORECASE)
-RE_CALL_ID   = re.compile(r"callIdentifier[=:\s]+([^\s&\|\n\r]+)",  re.IGNORECASE)
+RE_TOTAL = re.compile(r"(\d+)\s*item\s*\(s\)\s*found", re.IGNORECASE)
+RE_OPEN = re.compile(r"Opening date:\s*([^\|\n\r]+)", re.IGNORECASE)
+RE_DEAD = re.compile(r"Deadline date:\s*([^\|\n\r]+)", re.IGNORECASE)
+RE_NEXT_DEAD = re.compile(r"Next deadline:\s*([^\|\n\r]+)", re.IGNORECASE)
+RE_PROG = re.compile(r"Programme:\s*([^\|\n\r]+)", re.IGNORECASE)
+RE_ACTION = re.compile(r"Type of action:\s*([^\|\n\r]+)", re.IGNORECASE)
+RE_CLUSTER = re.compile(r"HORIZON-CL([1-6])", re.IGNORECASE)
+RE_CALL_ID = re.compile(r"callIdentifier[=:\s]+([^\s&\|\n\r]+)", re.IGNORECASE)
 
 MONTHS = {
     "january":1,"february":2,"march":3,"april":4,"may":5,"june":6,
     "july":7,"august":8,"september":9,"october":10,"november":11,"december":12,
 }
 
-# ── Tabelle di classificazione (da make_calls_json.py) ────────────────────────
+DETAIL_TEXT_SELECTORS = [
+    "main",
+    '[role="main"]',
+    "app-topic-details",
+    "app-prospect-details",
+    "app-competitive-call-details",
+    "section",
+]
+
+NOISE_PATTERNS = [
+    r"This site uses cookies.*",
+    r"Accept all",
+    r"EU Funding & Tenders Portal",
+    r"Reference Documents",
+    r"Topic updates",
+    r"Download PDF version",
+    r"Print",
+    r"Share",
+    r"Go back",
+]
+
+# ── Tabelle di classificazione ───────────────────────────────────────────────
 
 PROGRAMME_MAP = {
     "43108390":"Horizon Europe","43108391":"Horizon Europe",
@@ -83,129 +105,113 @@ THEMATIC_MAP = {
 }
 
 PROGRAMME_THEMATIC_MAP = [
-    ("European Defence Fund",           "Defence"),
-    ("EDF",                             "Defence"),
-    ("EU External Action",              "External Action & International Cooperation"),
-    ("EU External Action-Prospect",     "External Action & International Cooperation"),
-    ("Single Market Programme",         "SME, Entrepreneurship & Market Uptake"),
-    ("CERV",                            "Culture, Creativity & Inclusion"),
-    ("Creative Europe",                 "Culture, Creativity & Inclusion"),
-    ("Erasmus+",                        "Culture, Creativity & Inclusion"),
-    ("European Social Fund+",           "Culture, Creativity & Inclusion"),
-    ("Just Transition",                 "Climate, Energy & Mobility"),
-    ("Innovation Fund",                 "Climate, Energy & Mobility"),
-    ("EMFAF",                           "Food, Bioeconomy & Environment"),
-    ("LIFE",                            "Food, Bioeconomy & Environment"),
-    ("Euratom",                         "Climate, Energy & Mobility"),
-    ("Connecting Europe",               "Climate, Energy & Mobility"),
-    ("Internal Security Fund",          "Security & Resilience"),
-    ("European Solidarity Corps",       "Culture, Creativity & Inclusion"),
-    ("Digital Europe",                  "Digital, Industry & Space"),
-    ("RENEWFM",                         "Climate, Energy & Mobility"),
-    ("SOCPL",                           "Culture, Creativity & Inclusion"),
-    ("JUST",                            "Culture, Creativity & Inclusion"),
-    ("Pericles IV",                     "Culture, Creativity & Inclusion"),
-    ("I3",                              "SME, Entrepreneurship & Market Uptake"),
-    ("ERC",                             "Cross-cutting / Other"),
-    ("43392145",                        "Food, Bioeconomy & Environment"),
-    ("Horizon Europe",                  "Cross-cutting / Other"),
+    ("European Defence Fund", "Defence"),
+    ("EDF", "Defence"),
+    ("EU External Action", "External Action & International Cooperation"),
+    ("EU External Action-Prospect", "External Action & International Cooperation"),
+    ("Single Market Programme", "SME, Entrepreneurship & Market Uptake"),
+    ("CERV", "Culture, Creativity & Inclusion"),
+    ("Creative Europe", "Culture, Creativity & Inclusion"),
+    ("Erasmus+", "Culture, Creativity & Inclusion"),
+    ("European Social Fund+", "Culture, Creativity & Inclusion"),
+    ("Just Transition", "Climate, Energy & Mobility"),
+    ("Innovation Fund", "Climate, Energy & Mobility"),
+    ("EMFAF", "Food, Bioeconomy & Environment"),
+    ("LIFE", "Food, Bioeconomy & Environment"),
+    ("Euratom", "Climate, Energy & Mobility"),
+    ("Connecting Europe", "Climate, Energy & Mobility"),
+    ("Internal Security Fund", "Security & Resilience"),
+    ("European Solidarity Corps", "Culture, Creativity & Inclusion"),
+    ("Digital Europe", "Digital, Industry & Space"),
+    ("RENEWFM", "Climate, Energy & Mobility"),
+    ("SOCPL", "Culture, Creativity & Inclusion"),
+    ("JUST", "Culture, Creativity & Inclusion"),
+    ("Pericles IV", "Culture, Creativity & Inclusion"),
+    ("I3", "SME, Entrepreneurship & Market Uptake"),
+    ("ERC", "Cross-cutting / Other"),
+    ("43392145", "Food, Bioeconomy & Environment"),
+    ("Horizon Europe", "Cross-cutting / Other"),
 ]
 
-# (prefix, subcode_or_None, cluster_num, cluster_label, thematic)
 URL_RULES = [
-    ("MISS","CIT",      "M-CIT", "Climate-neutral & Smart Cities",               "Climate-neutral & Smart Cities"),
-    ("MISS","OCEAN",    "M-OCEAN","Healthy Oceans, Seas, Coastal & Inland Waters","Healthy Oceans, Seas, Coastal & Inland Waters"),
-    ("MISS","CLIMA",    "5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
-    ("MISS","CANCER",   "1",     "Health",                                        "Health & Life Sciences"),
-    ("MISS","SOIL",     "6",     "Food, Bioeconomy, Natural Resources, Agriculture and Environment","Food, Bioeconomy & Environment"),
-    ("MISS","CROSS",    "",      "",                                              "Cross-cutting / Other"),
-    ("HLTH",     None,  "1",     "Health",                                        "Health & Life Sciences"),
-    ("EIC",      None,  "",      "",                                              "SME, Entrepreneurship & Market Uptake"),
-    ("EIE",      None,  "",      "",                                              "SME, Entrepreneurship & Market Uptake"),
-    # EIT: EITUM-BP is Cities mission; other EIT → SME
-    ("EITUM-BP", None,  "M-CIT", "Climate-neutral & Smart Cities",               "Climate-neutral & Smart Cities"),
-    ("EIT",      None,  "",      "",                                              "SME, Entrepreneurship & Market Uptake"),
-    ("CID",      None,  "5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
-    ("EURATOM",  None,  "5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
-    ("EUROHPC",  None,  "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
-    ("JU-CLEAN-AVIATION",None,"","",                                              "Clean Aviation"),
-    ("JU-",      None,  "",      "",                                              "Climate, Energy & Mobility"),
-    ("MSCA",     None,  "",      "",                                              "Cross-cutting / Other"),
-    ("NEB",      None,  "",      "",                                              "Climate-neutral & Smart Cities"),
-    # RAISE → Digital/AI in Science
-    ("RAISE",    None,  "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
-    ("WIDERA",   None,  "",      "",                                              "Cross-cutting / Other"),
-    # INFRA subcodes: CL3-INFRA → Security; TECH/SERV/DEV/EOSC split below
-    # CL3 INFRA (security-related infrastructure) must come before generic INFRA rules
-    ("CL3","INFRA",     "3",     "Civil Security for Society",                    "Security & Resilience"),
-    # INFRA-TECH → Digital (instruments, digital twins)
-    ("INFRA","TECH",    "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
-    # INFRA-SERV → Digital (access to RI services, EOSC services)
-    ("INFRA","SERV",    "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
-    # INFRA-DEV and INFRA-EOSC → Research infrastructure (Cross-cutting)
-    ("INFRA","DEV",     "",      "",                                              "Cross-cutting / Other"),
-    ("INFRA","EOSC",    "",      "",                                              "Cross-cutting / Other"),
-    # Generic INFRA fallback → Cross-cutting
-    ("INFRA",    None,  "",      "",                                              "Cross-cutting / Other"),
-    ("AGRIP",    None,  "6",     "Food, Bioeconomy, Natural Resources, Agriculture and Environment","Food, Bioeconomy & Environment"),
-    # EUAF → Digital (forensics, digital tools, surveillance)
-    ("EUAF",     None,  "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
-    ("DIGITAL",  None,  "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
-    ("UCPM",     None,  "",      "",                                              "Cross-cutting / Other"),
-    ("RFCS",     None,  "5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
-    ("EUBA",     None,  "",      "",                                              "External Action & International Cooperation"),
-    ("PPPA","CHIPS",    "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
-    ("PPPA","MEDIA",    "",      "",                                              "Culture, Creativity & Inclusion"),
-    ("PPPA",     None,  "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
-    ("RENEWFM",  None,  "5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
-    ("SOCPL",    None,  "",      "",                                              "Culture, Creativity & Inclusion"),
-    ("ERC",      None,  "",      "",                                              "Cross-cutting / Other"),
-    ("EMFAF",    None,  "6",     "Food, Bioeconomy, Natural Resources, Agriculture and Environment","Food, Bioeconomy & Environment"),
-    ("JUST",     None,  "",      "",                                              "Culture, Creativity & Inclusion"),
-    ("I3",       None,  "",      "",                                              "SME, Entrepreneurship & Market Uptake"),
+    ("MISS","CIT",      "M-CIT", "Climate-neutral & Smart Cities",                "Climate-neutral & Smart Cities"),
+    ("MISS","OCEAN",    "M-OCEAN","Healthy Oceans, Seas, Coastal & Inland Waters", "Healthy Oceans, Seas, Coastal & Inland Waters"),
+    ("MISS","CLIMA",    "5",     "Climate, Energy and Mobility",                   "Climate, Energy & Mobility"),
+    ("MISS","CANCER",   "1",     "Health",                                         "Health & Life Sciences"),
+    ("MISS","SOIL",     "6",     "Food, Bioeconomy, Natural Resources, Agriculture and Environment", "Food, Bioeconomy & Environment"),
+    ("MISS","CROSS",    "",      "",                                               "Cross-cutting / Other"),
+    ("HLTH",     None,    "1",     "Health",                                         "Health & Life Sciences"),
+    ("EIC",      None,    "",      "",                                               "SME, Entrepreneurship & Market Uptake"),
+    ("EIE",      None,    "",      "",                                               "SME, Entrepreneurship & Market Uptake"),
+    ("EITUM-BP", None,    "M-CIT", "Climate-neutral & Smart Cities",                "Climate-neutral & Smart Cities"),
+    ("EIT",      None,    "",      "",                                               "SME, Entrepreneurship & Market Uptake"),
+    ("CID",      None,    "5",     "Climate, Energy and Mobility",                   "Climate, Energy & Mobility"),
+    ("EURATOM",  None,    "5",     "Climate, Energy and Mobility",                   "Climate, Energy & Mobility"),
+    ("EUROHPC",  None,    "4",     "Digital, Industry and Space",                    "Digital, Industry & Space"),
+    ("JU-CLEAN-AVIATION",None,      "",      "",                                     "Clean Aviation"),
+    ("JU-",      None,    "",      "",                                               "Climate, Energy & Mobility"),
+    ("MSCA",     None,    "",      "",                                               "Cross-cutting / Other"),
+    ("NEB",      None,    "",      "",                                               "Climate-neutral & Smart Cities"),
+    ("RAISE",    None,    "4",     "Digital, Industry and Space",                    "Digital, Industry & Space"),
+    ("WIDERA",   None,    "",      "",                                               "Cross-cutting / Other"),
+    ("CL3","INFRA",     "3",     "Civil Security for Society",                     "Security & Resilience"),
+    ("INFRA","TECH",    "4",     "Digital, Industry and Space",                    "Digital, Industry & Space"),
+    ("INFRA","SERV",    "4",     "Digital, Industry and Space",                    "Digital, Industry & Space"),
+    ("INFRA","DEV",     "",      "",                                               "Cross-cutting / Other"),
+    ("INFRA","EOSC",    "",      "",                                               "Cross-cutting / Other"),
+    ("INFRA",    None,    "",      "",                                               "Cross-cutting / Other"),
+    ("AGRIP",    None,    "6",     "Food, Bioeconomy, Natural Resources, Agriculture and Environment", "Food, Bioeconomy & Environment"),
+    ("EUAF",     None,    "4",     "Digital, Industry and Space",                    "Digital, Industry & Space"),
+    ("DIGITAL",  None,    "4",     "Digital, Industry and Space",                    "Digital, Industry & Space"),
+    ("UCPM",     None,    "",      "",                                               "Cross-cutting / Other"),
+    ("RFCS",     None,    "5",     "Climate, Energy and Mobility",                   "Climate, Energy & Mobility"),
+    ("EUBA",     None,    "",      "",                                               "External Action & International Cooperation"),
+    ("PPPA","CHIPS",    "4",     "Digital, Industry and Space",                    "Digital, Industry & Space"),
+    ("PPPA","MEDIA",    "",      "",                                               "Culture, Creativity & Inclusion"),
+    ("PPPA",     None,    "4",     "Digital, Industry and Space",                    "Digital, Industry & Space"),
+    ("RENEWFM",  None,    "5",     "Climate, Energy and Mobility",                   "Climate, Energy & Mobility"),
+    ("SOCPL",    None,    "",      "",                                               "Culture, Creativity & Inclusion"),
+    ("ERC",      None,    "",      "",                                               "Cross-cutting / Other"),
+    ("EMFAF",    None,    "6",     "Food, Bioeconomy, Natural Resources, Agriculture and Environment", "Food, Bioeconomy & Environment"),
+    ("JUST",     None,    "",      "",                                               "Culture, Creativity & Inclusion"),
+    ("I3",       None,    "",      "",                                               "SME, Entrepreneurship & Market Uptake"),
 ]
 
-# Numeric-ID call classification by known acronym in name
-# Used as a name-based fallback for calls without a structured URL
 NUMERIC_ID_NAME_RULES = [
-    # Health partnerships and joint calls
-    ("OHAMR",       "Health & Life Sciences"),
-    ("ERA4HEALTH",  "Health & Life Sciences"),
+    ("OHAMR", "Health & Life Sciences"),
+    ("ERA4HEALTH", "Health & Life Sciences"),
     ("ERA4 HEALTH", "Health & Life Sciences"),
     ("BRAINHEALTH", "Health & Life Sciences"),
-    ("EP BRAINHEALTH","Health & Life Sciences"),
-    ("ERDERA",      "Health & Life Sciences"),
-    ("BE READY",    "Health & Life Sciences"),   # id=12982 rare diseases partnership
-    ("OVERWEIGHT",  "Health & Life Sciences"),
-    ("OBESITY",     "Health & Life Sciences"),
-    ("CARDIOVASC",  "Health & Life Sciences"),
-    ("CLINICAL TRIAL","Health & Life Sciences"),
-    ("NEUROSCI",    "Health & Life Sciences"),
-    ("RARE DISEASE","Health & Life Sciences"),
-    # Cities
-    ("EITUM",       "Climate-neutral & Smart Cities"),
-    ("URBAN MOBILITY","Climate-neutral & Smart Cities"),
-    ("DRIVING URBAN","Climate-neutral & Smart Cities"),
-    # SME / market uptake
+    ("EP BRAINHEALTH", "Health & Life Sciences"),
+    ("ERDERA", "Health & Life Sciences"),
+    ("BE READY", "Health & Life Sciences"),
+    ("OVERWEIGHT", "Health & Life Sciences"),
+    ("OBESITY", "Health & Life Sciences"),
+    ("CARDIOVASC", "Health & Life Sciences"),
+    ("CLINICAL TRIAL", "Health & Life Sciences"),
+    ("NEUROSCI", "Health & Life Sciences"),
+    ("RARE DISEASE", "Health & Life Sciences"),
+    ("EITUM", "Climate-neutral & Smart Cities"),
+    ("URBAN MOBILITY", "Climate-neutral & Smart Cities"),
+    ("DRIVING URBAN", "Climate-neutral & Smart Cities"),
     ("EIC AWARDEE", "SME, Entrepreneurship & Market Uptake"),
-    ("INNOMATCH",   "SME, Entrepreneurship & Market Uptake"),
-    ("STARTUP",     "SME, Entrepreneurship & Market Uptake"),
-    # Food / environment
-    ("FOOD SUSTAINABILITY","Food, Bioeconomy & Environment"),
-    ("MARINE BIODIVERSITY","Food, Bioeconomy & Environment"),
-    ("BLUEACTION",  "Food, Bioeconomy & Environment"),
-    ("TASC-RESTOREMED","Food, Bioeconomy & Environment"),
-    ("RESTORE",     "Food, Bioeconomy & Environment"),
-    ("FERMENTED",   "Food, Bioeconomy & Environment"),
+    ("INNOMATCH", "SME, Entrepreneurship & Market Uptake"),
+    ("STARTUP", "SME, Entrepreneurship & Market Uptake"),
+    ("FOOD SUSTAINABILITY", "Food, Bioeconomy & Environment"),
+    ("MARINE BIODIVERSITY", "Food, Bioeconomy & Environment"),
+    ("BLUEACTION", "Food, Bioeconomy & Environment"),
+    ("TASC-RESTOREMED", "Food, Bioeconomy & Environment"),
+    ("RESTORE", "Food, Bioeconomy & Environment"),
+    ("FERMENTED", "Food, Bioeconomy & Environment"),
 ]
 
 URL_BENEFICIARY_OVERRIDE = {
-    "MSCA":  ["Research organisation"],
+    "MSCA": ["Research organisation"],
     "INFRA": ["Research organisation"],
-    "EUBA":  ["Public body"],
+    "EUBA": ["Public body"],
 }
 
-# ── Classificazione ───────────────────────────────────────────────────────────
+# ── Classificazione ──────────────────────────────────────────────────────────
 
 def _topic_id(url: str) -> str:
     s = (url or "").upper().split("?")[0]
@@ -220,16 +226,13 @@ def url_classify(url: str):
     for prefix, subcode, c_num, c_label, thematic in URL_RULES:
         if prefix not in tid:
             continue
-        if subcode is not None:
-            # subcode can appear anywhere in the topic id (e.g. CL3...INFRA, INFRA...TECH)
-            if subcode not in tid:
-                continue
+        if subcode is not None and subcode not in tid:
+            continue
         benef = URL_BENEFICIARY_OVERRIDE.get(prefix, None)
         return c_num, c_label, thematic, benef
     return "", "", "", None
 
 def name_classify(name: str):
-    """Fallback classification for numeric-ID calls based on known name keywords."""
     name_up = (name or "").upper()
     for keyword, thematic in NUMERIC_ID_NAME_RULES:
         if keyword.upper() in name_up:
@@ -250,10 +253,14 @@ def resolve_thematic(cluster_num: str, prog: str) -> str:
 
 def normalize_action(v: str) -> str:
     s = (v or "").lower()
-    if "research and innovation action" in s: return "RIA"
-    if "innovation action" in s:              return "IA"
-    if "coordination and support" in s:       return "CSA"
-    if "cofund" in s:                         return "COFUND"
+    if "research and innovation action" in s:
+        return "RIA"
+    if "innovation action" in s:
+        return "IA"
+    if "coordination and support" in s:
+        return "CSA"
+    if "cofund" in s:
+        return "COFUND"
     return v or ""
 
 def beneficiary_hint(action: str, prog: str, url_benef):
@@ -262,13 +269,17 @@ def beneficiary_hint(action: str, prog: str, url_benef):
     a = (action or "").upper()
     p = (prog or "").lower()
     hints = []
-    if a == "IA":   hints.extend(["SME","Large enterprise","Research organisation"])
-    if a == "RIA":  hints.extend(["Research organisation","SME","Large enterprise"])
-    if a == "CSA":  hints.extend(["Research organisation","Public body","NGO","SME"])
-    if "external action" in p: hints.extend(["NGO","Public body","Research organisation"])
+    if a == "IA":
+        hints.extend(["SME", "Large enterprise", "Research organisation"])
+    if a == "RIA":
+        hints.extend(["Research organisation", "SME", "Large enterprise"])
+    if a == "CSA":
+        hints.extend(["Research organisation", "Public body", "NGO", "SME"])
+    if "external action" in p:
+        hints.extend(["NGO", "Public body", "Research organisation"])
     return list(dict.fromkeys(hints))
 
-# ── Parsing date ──────────────────────────────────────────────────────────────
+# ── Parsing date ─────────────────────────────────────────────────────────────
 
 def parse_date_iso(s: str) -> str:
     s = re.sub(r"\s+", " ", str(s or "")).strip()
@@ -293,7 +304,7 @@ def parse_date_iso(s: str) -> str:
                 pass
     return ""
 
-# ── Utilità Playwright ────────────────────────────────────────────────────────
+# ── Utilità Playwright ───────────────────────────────────────────────────────
 
 def clean(s):
     if not s:
@@ -301,12 +312,22 @@ def clean(s):
     s = re.sub(r"\s+", " ", str(s)).strip()
     return s or None
 
+def clean_fulltext(s: str) -> str:
+    if not s:
+        return ""
+    txt = str(s)
+    for pat in NOISE_PATTERNS:
+        txt = re.sub(pat, " ", txt, flags=re.IGNORECASE)
+    txt = txt.replace("\xa0", " ")
+    txt = re.sub(r"\s+", " ", txt).strip()
+    return txt
+
 def pick(rx, text):
     m = rx.search(text or "")
     return clean(m.group(1)) if m else None
 
 def accept_cookies(page):
-    for label in ["Accept all","Accept All","Accept","I accept","Agree","OK"]:
+    for label in ["Accept all", "Accept All", "Accept", "I accept", "Agree", "OK"]:
         for scope in [page] + list(page.frames):
             try:
                 btn = scope.get_by_role("button", name=re.compile(label, re.IGNORECASE))
@@ -401,10 +422,31 @@ def extract_links(page):
             out.append(full)
     return out
 
-# ── Parsing card dalla lista ──────────────────────────────────────────────────
+def extract_detail_text(page) -> str:
+    texts = []
+    for sel in DETAIL_TEXT_SELECTORS:
+        try:
+            loc = page.locator(sel).first
+            if loc.count():
+                txt = clean_fulltext(loc.inner_text(timeout=3000))
+                if txt and len(txt) > 300:
+                    texts.append(txt)
+        except Exception:
+            pass
+
+    if not texts:
+        try:
+            texts.append(clean_fulltext(page.locator("body").inner_text(timeout=3000)))
+        except Exception:
+            return ""
+
+    best = max(texts, key=len) if texts else ""
+    return best[:50000]
+
+# ── Parsing card dalla lista ─────────────────────────────────────────────────
 
 def parse_card(page, full_url: str) -> dict:
-    path = full_url.replace("https://ec.europa.eu","").split("?")[0]
+    path = full_url.replace("https://ec.europa.eu", "").split("?")[0]
     a = page.locator(f'a[href*="{path}"]').first
     title = clean(a.inner_text()) if a.count() else path.split("/")[-1]
 
@@ -412,26 +454,28 @@ def parse_card(page, full_url: str) -> dict:
         "xpath=ancestor::*[contains(.,'Programme:') or contains(.,'Opening date:') or "
         "contains(.,'Deadline date:') or contains(.,'Type of action:')][1]"
     ).first
-    text = (card.inner_text() if card.count()
-            else (a.locator("xpath=ancestor::*[1]").inner_text() if a.count() else ""))
+    text = (
+        card.inner_text() if card.count()
+        else (a.locator("xpath=ancestor::*[1]").inner_text() if a.count() else "")
+    )
 
     dead = pick(RE_DEAD, text) or pick(RE_NEXT_DEAD, text)
     call_id = pick(RE_CALL_ID, full_url) or pick(RE_CALL_ID, text)
     cluster_raw = pick(RE_CLUSTER, text) or pick(RE_CLUSTER, full_url) or pick(RE_CLUSTER, call_id or "")
 
     return {
-        "name":           title,
-        "call_id":        call_id,
-        "programme_raw":  pick(RE_PROG, text),
-        "action_raw":     pick(RE_ACTION, text),
-        "cluster_raw":    cluster_raw,
-        "opening_raw":    pick(RE_OPEN, text),
-        "deadline_raw":   dead,
-        "url":            full_url,
-        "_needs_enrich":  False,
+        "name": title,
+        "call_id": call_id,
+        "programme_raw": pick(RE_PROG, text),
+        "action_raw": pick(RE_ACTION, text),
+        "cluster_raw": cluster_raw,
+        "opening_raw": pick(RE_OPEN, text),
+        "deadline_raw": dead,
+        "url": full_url,
+        "fulltext_raw": "",
     }
 
-# ── Arricchimento via XHR ────────────────────────────────────────────────────
+# ── Arricchimento via XHR + pagina dettaglio ────────────────────────────────
 
 def _first(meta, *keys):
     for k in keys:
@@ -443,9 +487,7 @@ def _first(meta, *keys):
     return ""
 
 def _enrich_one(page, row: dict) -> bool:
-    """Apre una pagina di dettaglio e cattura i campi mancanti via XHR.
-    Restituisce True se almeno un campo è stato recuperato."""
-    url      = row["url"]
+    url = row["url"]
     captured = {}
 
     def handle(response, _c=captured):
@@ -453,10 +495,10 @@ def _enrich_one(page, row: dict) -> bool:
             try:
                 body = response.json()
                 for item in body.get("results", [body]):
-                    meta    = item.get("metadata", {}) or {}
+                    meta = item.get("metadata", {}) or {}
                     prog_id = _first(meta, "frameworkProgramme", "programme")
-                    action  = _first(meta, "typesOfAction","typeOfAction","fundingScheme")
-                    cid     = _first(meta, "callIdentifier","identifier")
+                    action = _first(meta, "typesOfAction", "typeOfAction", "fundingScheme")
+                    cid = _first(meta, "callIdentifier", "identifier")
                     if prog_id and not _c.get("prog"):
                         _c["prog"] = PROGRAMME_MAP.get(prog_id, prog_id)
                     if action and not _c.get("action"):
@@ -468,8 +510,12 @@ def _enrich_one(page, row: dict) -> bool:
 
     page.on("response", handle)
     try:
-        page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+        page.goto(url, wait_until="domcontentloaded", timeout=30000)
         page.wait_for_timeout(2500)
+        accept_cookies(page)
+        wait_cookie_gone(page, 3000)
+        page.wait_for_timeout(1000)
+        row["fulltext_raw"] = extract_detail_text(page)
     except Exception as e:
         print(f"    [ERR goto] {e}", flush=True)
     finally:
@@ -482,32 +528,28 @@ def _enrich_one(page, row: dict) -> bool:
     if captured.get("call_id") and not row.get("call_id"):
         row["call_id"] = captured["call_id"]
 
-    return bool(captured)
-
+    return bool(captured) or bool(row.get("fulltext_raw"))
 
 def enrich(ctx, rows: list):
-    to_fix = [r for r in rows
-              if (not r.get("programme_raw") or not r.get("action_raw") or not r.get("call_id"))
-              and r.get("url")]
+    to_fix = [r for r in rows if r.get("url")]
     if not to_fix:
-        print("  Tutti i campi già presenti ✓", flush=True)
+        print("  Nessuna call da arricchire ✓", flush=True)
         return
 
-    print(f"  {len(to_fix)} call da arricchire…", flush=True)
+    print(f"  {len(to_fix)} call da arricchire con metadata + full text…", flush=True)
     page = ctx.new_page()
     skipped = 0
 
     for idx, row in enumerate(to_fix, 1):
-        print(f"  [{idx:>4}/{len(to_fix)}] {(row['name'] or '')[:60]}", flush=True)
+        print(f"  [{idx:>4}/{len(to_fix)}] {(row['name'] or '')[:70]}", flush=True)
 
         ok = False
-        for attempt in range(1, 3):   # max 2 tentativi per call
+        for attempt in range(1, 3):
             try:
                 ok = _enrich_one(page, row)
                 break
             except Exception as e:
                 print(f"    [tentativo {attempt} fallito] {e}", flush=True)
-                # Ricrea la pagina se crashata
                 try:
                     page.close()
                 except Exception:
@@ -517,84 +559,95 @@ def enrich(ctx, rows: list):
 
         if not ok:
             skipped += 1
-            print(f"    [SKIP] nessun dato recuperato", flush=True)
+            print("    [SKIP] nessun dato recuperato", flush=True)
 
-        # Salvataggio intermedio ogni 100 call (sicurezza in caso di crash)
         if idx % 100 == 0:
-            print(f"  [checkpoint] salvate {idx} call finora…", flush=True)
+            print(f"  [checkpoint] processate {idx} call…", flush=True)
 
-        time.sleep(0.3)
+        time.sleep(0.25)
 
     try:
         page.close()
     except Exception:
         pass
+
     print(f"  Arricchimento completato. Saltate: {skipped}/{len(to_fix)}", flush=True)
 
-# ── Trasforma riga grezza → oggetto call classificato ─────────────────────────
+# ── Trasforma riga grezza → oggetto call classificato ───────────────────────
+
+def build_search_blob(parts) -> str:
+    return re.sub(r"\s+", " ", " ".join([p for p in parts if p])).strip().lower()
 
 def to_call(row: dict) -> dict:
-    url        = row.get("url", "")
-    prog_raw   = row.get("programme_raw") or ""
-    call_id    = row.get("call_id") or ""
+    url = row.get("url", "")
+    prog_raw = row.get("programme_raw") or ""
+    call_id = row.get("call_id") or ""
     action_raw = row.get("action_raw") or ""
+    fulltext = clean_fulltext(row.get("fulltext_raw") or "")
 
-    # Cluster: da call_id > cluster_raw > url
     cluster_num = ""
-    for src in [call_id, row.get("cluster_raw",""), url]:
+    for src in [call_id, row.get("cluster_raw", ""), url]:
         m = RE_CLUSTER.search(src or "")
         if m:
             cluster_num = m.group(1)
             break
 
-    # URL overrides
     u_cnum, u_clabel, u_thematic, u_benef = url_classify(url)
     if u_cnum:
         cluster_num = u_cnum
 
     cluster_label = u_clabel or THEMATIC_MAP.get(cluster_num, "")
-    thematic      = u_thematic or resolve_thematic(cluster_num, prog_raw) or name_classify(row.get("name",""))
-    action        = normalize_action(action_raw)
-    is_mission    = bool("/HORIZON-MISS" in url.upper())
+    thematic = u_thematic or resolve_thematic(cluster_num, prog_raw) or name_classify(row.get("name", ""))
+    action = normalize_action(action_raw)
+    is_mission = bool("/HORIZON-MISS" in url.upper())
 
-    opening_raw  = row.get("opening_raw") or ""
+    opening_raw = row.get("opening_raw") or ""
     deadline_raw = row.get("deadline_raw") or ""
 
+    search_blob = build_search_blob([
+        row.get("name") or "",
+        call_id,
+        prog_raw,
+        cluster_label,
+        thematic,
+        action,
+        opening_raw,
+        deadline_raw,
+        url,
+        fulltext,
+    ])
+
     return {
-        "name":             row.get("name") or "",
-        "call_id":          call_id,
-        "programme":        prog_raw,
-        "cluster_num":      cluster_num,
-        "cluster_label":    cluster_label,
+        "name": row.get("name") or "",
+        "call_id": call_id,
+        "programme": prog_raw,
+        "cluster_num": cluster_num,
+        "cluster_label": cluster_label,
         "thematic_cluster": thematic,
-        "action":           action,
-        "opening":          opening_raw,
-        "opening_iso":      parse_date_iso(opening_raw),
-        "deadline":         deadline_raw,
-        "deadline_iso":     parse_date_iso(deadline_raw),
-        "url":              url,
-        "is_mission":       is_mission,
+        "action": action,
+        "opening": opening_raw,
+        "opening_iso": parse_date_iso(opening_raw),
+        "deadline": deadline_raw,
+        "deadline_iso": parse_date_iso(deadline_raw),
+        "url": url,
+        "is_mission": is_mission,
         "beneficiary_hint": beneficiary_hint(action, prog_raw, u_benef),
+        "fulltext": fulltext,
+        "search_blob": search_blob,
     }
 
 # ── Changelog ────────────────────────────────────────────────────────────────
 
 def write_changelog(old_calls: list, new_calls: list, changelog_path: Path, generated: str):
-    """
-    Confronta old_calls e new_calls per URL.
-    Scrive changelog.md con call aggiunte, rimosse e statistiche.
-    Aggiunge una riga anche a changelog_history.md (log cumulativo).
-    """
     old_by_url = {c["url"]: c for c in old_calls}
     new_by_url = {c["url"]: c for c in new_calls}
 
     old_urls = set(old_by_url)
     new_urls = set(new_by_url)
 
-    added   = [new_by_url[u] for u in sorted(new_urls - old_urls)]
+    added = [new_by_url[u] for u in sorted(new_urls - old_urls)]
     removed = [old_by_url[u] for u in sorted(old_urls - new_urls)]
 
-    # Conta per area tematica
     def thematic_counts(calls):
         tc = {}
         for c in calls:
@@ -602,83 +655,78 @@ def write_changelog(old_calls: list, new_calls: list, changelog_path: Path, gene
             tc[k] = tc.get(k, 0) + 1
         return tc
 
-    date_str = generated[:10]  # YYYY-MM-DD
+    date_str = generated[:10]
 
     lines = []
-    lines.append(f"# Changelog calls.json")
-    lines.append(f"")
-    lines.append(f"**Ultimo aggiornamento:** {generated.replace('T',' ').replace('+00:00',' UTC')[:22]}")
-    lines.append(f"")
-    lines.append(f"## Riepilogo")
-    lines.append(f"")
-    lines.append(f"| | Numero |")
-    lines.append(f"|---|---|")
+    lines.append("# Changelog calls.json")
+    lines.append("")
+    lines.append(f"**Ultimo aggiornamento:** {generated.replace('T', ' ').replace('+00:00', ' UTC')[:22]}")
+    lines.append("")
+    lines.append("## Riepilogo")
+    lines.append("")
+    lines.append("| | Numero |")
+    lines.append("|---|---|")
     lines.append(f"| Call totali (nuovo) | {len(new_calls)} |")
     lines.append(f"| Call totali (precedente) | {len(old_calls)} |")
     lines.append(f"| **Nuove call aggiunte** | **{len(added)}** |")
     lines.append(f"| Call rimosse (scadute/chiuse) | {len(removed)} |")
-    lines.append(f"")
+    lines.append("")
 
     if added:
         lines.append(f"## Call aggiunte ({len(added)})")
-        lines.append(f"")
-        # Group by thematic
+        lines.append("")
         by_thematic = {}
         for c in added:
             t = c.get("thematic_cluster") or "(non classificato)"
             by_thematic.setdefault(t, []).append(c)
         for thematic, calls in sorted(by_thematic.items()):
             lines.append(f"### {thematic} ({len(calls)})")
-            lines.append(f"")
+            lines.append("")
             for c in calls:
-                name    = c.get("name") or "(senza nome)"
-                prog    = c.get("programme") or ""
-                action  = c.get("action") or ""
-                dead    = c.get("deadline") or ""
-                url     = c.get("url") or ""
+                name = c.get("name") or "(senza nome)"
+                prog = c.get("programme") or ""
+                action = c.get("action") or ""
+                dead = c.get("deadline") or ""
+                url = c.get("url") or ""
                 meta = " · ".join(filter(None, [prog, action, f"Scadenza: {dead}" if dead else ""]))
                 lines.append(f"- **{name}**")
                 if meta:
                     lines.append(f"  {meta}")
                 if url:
                     lines.append(f"  {url}")
-                lines.append(f"")
+                lines.append("")
     else:
-        lines.append(f"## Call aggiunte")
-        lines.append(f"")
-        lines.append(f"Nessuna nuova call rispetto alla rilevazione precedente.")
-        lines.append(f"")
+        lines.append("## Call aggiunte")
+        lines.append("")
+        lines.append("Nessuna nuova call rispetto alla rilevazione precedente.")
+        lines.append("")
 
     if removed:
         lines.append(f"## Call rimosse ({len(removed)})")
-        lines.append(f"")
+        lines.append("")
         for c in removed:
             name = c.get("name") or "(senza nome)"
             prog = c.get("programme") or ""
             dead = c.get("deadline") or ""
             meta = " · ".join(filter(None, [prog, f"Scadenza: {dead}" if dead else ""]))
             lines.append(f"- **{name}**{(' — ' + meta) if meta else ''}")
-        lines.append(f"")
+        lines.append("")
 
-    lines.append(f"## Distribuzione per area tematica (nuovo dataset)")
-    lines.append(f"")
-    lines.append(f"| Area tematica | Call |")
-    lines.append(f"|---|---|")
+    lines.append("## Distribuzione per area tematica (nuovo dataset)")
+    lines.append("")
+    lines.append("| Area tematica | Call |")
+    lines.append("|---|---|")
     for k, v in sorted(thematic_counts(new_calls).items(), key=lambda x: -x[1]):
         lines.append(f"| {k} | {v} |")
-    lines.append(f"")
+    lines.append("")
 
     changelog_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"\n📋 Changelog scritto: {changelog_path} (+{len(added)} aggiunte, -{len(removed)} rimosse)")
 
-    # Aggiorna history cumulativa
     history_path = changelog_path.parent / "changelog_history.md"
-    history_line = (
-        f"| {date_str} | {len(new_calls)} | +{len(added)} | -{len(removed)} |"
-    )
+    history_line = f"| {date_str} | {len(new_calls)} | +{len(added)} | -{len(removed)} |"
     if history_path.exists():
         hist = history_path.read_text(encoding="utf-8")
-        # Aggiunge riga dopo l'header della tabella
         if history_line not in hist:
             hist = hist.rstrip() + "\n" + history_line + "\n"
             history_path.write_text(hist, encoding="utf-8")
@@ -692,11 +740,10 @@ def write_changelog(old_calls: list, new_calls: list, changelog_path: Path, gene
         history_path.write_text(header, encoding="utf-8")
     print(f"📋 History aggiornata: {history_path}")
 
-
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Main ─────────────────────────────────────────────────────────────────────
 
 def main(out_path: Path):
-    rows      = []
+    rows = []
     seen_urls = set()
 
     with sync_playwright() as p:
@@ -712,9 +759,7 @@ def main(out_path: Path):
         )
         page = ctx.new_page()
 
-        # ── Passo 1: lista ────────────────────────────────────────────────────
-        page.goto(LIST_URL.format(page=1, ps=PAGE_SIZE),
-                  wait_until="domcontentloaded", timeout=90000)
+        page.goto(LIST_URL.format(page=1, ps=PAGE_SIZE), wait_until="domcontentloaded", timeout=90000)
         page.wait_for_timeout(1500)
         accept_cookies(page)
         wait_cookie_gone(page)
@@ -725,11 +770,11 @@ def main(out_path: Path):
             browser.close()
             return
         max_pages = math.ceil(total / PAGE_SIZE)
-        print(f"✅ Totale: {total} call | pagine: {max_pages}")
+        print(f" Totale: {total} call | pagine: {max_pages}")
 
         for pnum in range(1, max_pages + 1):
             remaining = total - (pnum - 1) * PAGE_SIZE
-            expected  = min(PAGE_SIZE, remaining)
+            expected = min(PAGE_SIZE, remaining)
             url = LIST_URL.format(page=pnum, ps=PAGE_SIZE)
             print(f"\n[p{pnum}/{max_pages}] attese ~{expected}", end="", flush=True)
             page.goto(url, wait_until="domcontentloaded", timeout=90000)
@@ -738,7 +783,7 @@ def main(out_path: Path):
             wait_cookie_gone(page)
 
             scroll_until(page, expected=expected)
-            links     = extract_links(page)
+            links = extract_links(page)
             new_links = [u for u in links if u not in seen_urls]
             print(f" → trovati {len(new_links)} nuovi", flush=True)
 
@@ -747,34 +792,35 @@ def main(out_path: Path):
                 rows.append(parse_card(page, u))
             time.sleep(0.1)
 
-        # ── Passo 2: arricchimento ────────────────────────────────────────────
-        needs = [r for r in rows if not r.get("programme_raw") or not r.get("action_raw") or not r.get("call_id")]
+        needs = [r for r in rows if r.get("url")]
         print(f"\n═══ Passo 2: arricchimento {len(needs)} call su {len(rows)} totali ═══", flush=True)
         enrich(ctx, rows)
         browser.close()
 
-    # ── Classificazione e output ──────────────────────────────────────────────
     calls = []
-    seen  = set()
+    seen = set()
     for row in rows:
         call = to_call(row)
         if call["url"] and call["url"] not in seen:
             seen.add(call["url"])
             calls.append(call)
 
-    # Statistiche
     tc = {}
+    with_fulltext = 0
     for c in calls:
         k = c["thematic_cluster"] or "(non classificato)"
         tc[k] = tc.get(k, 0) + 1
+        if c.get("fulltext"):
+            with_fulltext += 1
+
     print(f"\nClassificazione ({len(calls)} call totali):")
     for k, v in sorted(tc.items(), key=lambda x: -x[1]):
         print(f"  {v:5d}  {k}")
     print(f"\nNon classificati: {tc.get('(non classificato)', 0)}")
+    print(f"Call con full text: {with_fulltext}/{len(calls)}")
 
     generated = datetime.now(timezone.utc).isoformat()
 
-    # ── Changelog: confronta con il dataset precedente ────────────────────────
     old_calls = []
     if out_path.exists():
         try:
@@ -787,20 +833,16 @@ def main(out_path: Path):
     changelog_path = out_path.parent / "changelog.md"
     write_changelog(old_calls, calls, changelog_path, generated)
 
-    # ── Salva nuovo dataset ───────────────────────────────────────────────────
     payload = {
         "generated": generated,
         "calls": calls,
     }
-    out_path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    print(f"\n✅ Scritto {out_path} con {len(calls)} call")
-
+    out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"\n Scritto {out_path} con {len(calls)} call")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", default="calls.json", help="Percorso output JSON")
     args = parser.parse_args()
     main(Path(args.out))
+
