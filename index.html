@@ -771,19 +771,8 @@
       }
 
       function buildSearchText(call) {
-        return [
-          call.name,
-          call.programme,
-          call.thematic_cluster,
-          call.cluster_label,
-          call.action,
-          call.description,
-          call.objective,
-          call.scope,
-          call.destination,
-          call.topic
-        ].filter(Boolean).join(' ').toLowerCase();
-      }
+  return String(call.search_blob || call.fulltext || '').toLowerCase();
+}
 
       function getTopicMapForCluster(clusterName) {
         const entry = TOPIC_CATALOG[clusterName];
