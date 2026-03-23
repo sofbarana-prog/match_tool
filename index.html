@@ -43,6 +43,16 @@
       font-size: 0.87rem; color: #1e3a5f; line-height: 1.45;
     }
     .cumul-note strong { font-weight: 600; }
+    .search-bar { display:none; margin-bottom:14px; }
+    .search-bar.active { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .search-bar input {
+      flex:1; min-width:200px; padding:9px 14px; border:1px solid #cfcfcf;
+      border-radius:10px; font-size:.97rem; outline:none;
+    }
+    .search-bar input:focus { border-color:var(--primary); box-shadow:0 0 0 3px #dbeafe; }
+    .search-bar .count { color:var(--muted); font-size:.9rem; white-space:nowrap; }
+    .call.hidden { display:none; }
+    mark { background:#fef08a; border-radius:2px; padding:0 2px; }
     @media (max-width: 760px) { .row { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -163,6 +173,11 @@
       </div>
     </form>
 
+    <div id="searchBar" class="search-bar">
+      <input type="text" id="searchInput" placeholder="Filter results by keyword… e.g. hydrogen, batteries, AI" autocomplete="off" />
+      <span class="count" id="searchCount"></span>
+      <button type="button" id="clearSearch" class="secondary" style="padding:8px 12px;font-size:.9rem">✕ Clear</button>
+    </div>
     <section id="results" class="results" aria-live="polite"></section>
 
     <footer>
@@ -407,6 +422,11 @@
     });
 
     results.innerHTML = html;
+    // Show keyword filter bar
+    const sb = document.getElementById('searchBar');
+    sb.classList.add('active');
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchCount').textContent = `${filtered.length} calls`;
     results.scrollIntoView({ behavior: 'smooth' });
   }
 
@@ -422,7 +442,55 @@
     renderResults(answers, filterCalls(answers));
   });
 
-  resetBtn.addEventListener('click', function() { form.reset(); results.innerHTML = ''; });
+  resetBtn.addEventListener('click', function() {
+    form.reset();
+    results.innerHTML = '';
+    document.getElementById('searchBar').classList.remove('active');
+    document.getElementById('searchInput').value = '';
+  });
+
+  // ── Keyword filter ────────────────────────────────────────────────────────
+  function applySearch() {
+    const raw   = document.getElementById('searchInput').value.trim();
+    const terms = raw.toLowerCase().split(/\s+/).filter(Boolean);
+    const cards = document.querySelectorAll('#results .call');
+    let visible = 0;
+
+    cards.forEach(card => {
+      // Search across title + meta text
+      const text = card.innerText.toLowerCase();
+      const match = terms.length === 0 || terms.every(t => text.includes(t));
+      card.classList.toggle('hidden', !match);
+      if (match) visible++;
+
+      // Highlight matches in h3 title
+      const h3 = card.querySelector('h3');
+      if (!h3) return;
+      // Restore original text first (stored in data attribute)
+      if (!h3.dataset.original) h3.dataset.original = h3.innerHTML;
+      if (terms.length === 0) {
+        h3.innerHTML = h3.dataset.original;
+      } else {
+        let html = h3.dataset.original;
+        terms.forEach(t => {
+          const re = new RegExp('(' + t.replace(/[.*+?^${}()|[\]\]/g,'\$&') + ')', 'gi');
+          html = html.replace(re, '<mark>$1</mark>');
+        });
+        h3.innerHTML = html;
+      }
+    });
+
+    const total = cards.length;
+    document.getElementById('searchCount').textContent =
+      terms.length ? `${visible} of ${total} calls match` : `${total} calls`;
+  }
+
+  document.getElementById('searchInput').addEventListener('input', applySearch);
+
+  document.getElementById('clearSearch').addEventListener('click', function() {
+    document.getElementById('searchInput').value = '';
+    applySearch();
+  });
 })();
 </script>
 </body>
