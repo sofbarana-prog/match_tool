@@ -803,7 +803,7 @@
             if (b._score !== a._score) return b._score - a._score;
             return String(a._deadline_norm || '').localeCompare(String(b._deadline_norm || ''));
           })
-          .slice(0, 50);
+          .slice(0, 200);
       }
 
       function applyLiveFilters(results) {
