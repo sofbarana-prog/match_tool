@@ -39,9 +39,7 @@
       padding:32px 20px 72px;
     }
 
-    .hero{
-      margin-bottom:24px;
-    }
+    .hero{ margin-bottom:24px; }
 
     .hero h1{
       margin:0 0 10px;
@@ -63,14 +61,8 @@
       box-shadow:var(--shadow);
     }
 
-    .form-card{
-      padding:24px;
-    }
-
-    .results-card{
-      margin-top:28px;
-      padding:24px;
-    }
+    .form-card{ padding:24px; }
+    .results-card{ margin-top:28px; padding:24px; }
 
     fieldset{
       margin:0 0 18px;
@@ -355,6 +347,7 @@
       .grid-2{ grid-template-columns:1fr; }
       .page{ padding:20px 14px 48px; }
       .form-card, .results-card{ padding:18px; }
+      .toolbar{ flex-direction:column; align-items:stretch; }
     }
   </style>
 </head>
@@ -469,7 +462,7 @@
     <section id="resultsSection" class="card results-card hidden">
       <h2 class="section-title">Risultati</h2>
       <p class="section-subtitle">
-        I filtri compaiono solo dopo la generazione dei risultati. Il dropdown usa il campo <code>subtopics</code>, mentre la ricerca usa <code>search_blob</code>.
+        Dopo la generazione, qui compare il dropdown dei sottotemi con tutte le opzioni disponibili nei risultati trovati.
       </p>
 
       <div id="postFilters" class="toolbar hidden">
@@ -516,10 +509,16 @@
       let visibleCount = 20;
       const PAGE_SIZE = 20;
 
-      const MISSION_TO_CLUSTER = {
-        CANCER: '1',
-        CLIMA: '5',
-        SOIL: '6'
+      const TOPIC_FALLBACKS = {
+        "Health & Life Sciences": ["health","cancer","biotech","pharma","medtech","diagnostics","digital_health","genomics","neuroscience","public_health"],
+        "Culture, Creativity & Inclusion": ["heritage","creative_industries","inclusion","democracy","education_society","migration"],
+        "Security & Resilience": ["cybersecurity","disaster_resilience","border_security","civil_protection","critical_infrastructure","urban_security"],
+        "Digital, Industry & Space": ["digital","ai","robotics","semiconductors","quantum","data_cloud","manufacturing","materials","space"],
+        "Climate, Energy & Mobility": ["climate","energy","hydrogen","batteries","mobility","transport","renewables","storage","smart_grids","buildings","cities","circularity","water"],
+        "Food, Bioeconomy & Environment": ["agriculture","food_systems","bioeconomy","biodiversity","forestry","soil","environment","water_resources"],
+        "SME, Entrepreneurship & Market Uptake": ["sme","startup","scaleup","market_uptake","entrepreneurship"],
+        "Climate-neutral & Smart Cities": ["cities","smart_cities","urban_mobility","urban_energy","buildings","climate_neutrality"],
+        "Research, Academia": ["research_infrastructures","open_science","academia"]
       };
 
       function escapeHtml(value) {
@@ -535,9 +534,9 @@
       }
 
       function prettyTopicLabel(key) {
-        return String(key || '')
-          .replace(/_/g, ' ')
-          .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+        return String(key || '').replace(/_/g, ' ').replace(/\b\w/g, function (c) {
+          return c.toUpperCase();
+        });
       }
 
       function normalizeAction(value) {
@@ -545,15 +544,9 @@
       }
 
       function normalizeCluster(value) {
-        if (value === null || value === undefined) return '';
-        const s = String(value).trim();
-        if (/^M-/.test(s) || MISSION_TO_CLUSTER[s]) return s;
+        const s = String(value || '').trim();
         const match = s.match(/(\d+)/);
         return match ? match[1] : '';
-      }
-
-      function resolveCluster(value) {
-        return MISSION_TO_CLUSTER[value] || value;
       }
 
       function isHorizonProgramme(programme) {
@@ -574,7 +567,6 @@
         if (call && typeof call.search_blob === 'string' && call.search_blob.trim()) {
           return call.search_blob.toLowerCase();
         }
-
         return [
           call.name,
           call.programme,
@@ -586,8 +578,27 @@
         ].filter(Boolean).join(' ').toLowerCase();
       }
 
+      function inferTopicsFallback(call) {
+        const cluster = String(call.thematic_cluster || '').trim();
+        const candidates = TOPIC_FALLBACKS[cluster] || [];
+        const text = getSearchText(call);
+        const found = [];
+
+        candidates.forEach(function (topic) {
+          const probe = topic.replace(/_/g, ' ');
+          if (text.includes(probe) || text.includes(topic)) {
+            found.push(topic);
+          }
+        });
+
+        return found;
+      }
+
       function getTopics(call) {
-        return Array.isArray(call.subtopics) ? call.subtopics : [];
+        if (Array.isArray(call.subtopics) && call.subtopics.length) {
+          return call.subtopics.filter(Boolean);
+        }
+        return inferTopicsFallback(call);
       }
 
       function enrichCall(call) {
@@ -607,25 +618,17 @@
 
       function scoreCall(call, answers) {
         let score = 0;
-
         const wantedThematic = answers.thematic_cluster || '';
         const wantedOfficial = normalizeCluster(answers.official_cluster);
         const wantedAction = answers.action_type || '';
         const projectEnd = projectEndIso(answers.closure_year, answers.closure_quarter);
 
         if (wantedThematic && call._thematic_norm === wantedThematic) score += 60;
-
-        if (wantedOfficial) {
-          const wantedResolved = resolveCluster(wantedOfficial);
-          const callResolved = resolveCluster(call._official_norm);
-          if (wantedResolved === callResolved) score += 25;
-        }
+        if (wantedOfficial && call._official_norm === wantedOfficial) score += 25;
 
         if (wantedAction && call._is_horizon) {
           if (wantedAction === 'OTHER') {
-            if (!call._action_norm || !['IA', 'RIA', 'CSA', 'COFUND'].includes(call._action_norm)) {
-              score += 30;
-            }
+            if (!call._action_norm || !['IA', 'RIA', 'CSA', 'COFUND'].includes(call._action_norm)) score += 30;
           } else if (call._action_norm === wantedAction) {
             score += 35;
           }
@@ -663,9 +666,8 @@
         }
 
         if (wantedOfficial) {
-          const resolvedWanted = resolveCluster(wantedOfficial);
           out = out.filter(function (call) {
-            return resolveCluster(call._official_norm) === resolvedWanted;
+            return call._official_norm === wantedOfficial;
           });
         }
 
@@ -690,24 +692,20 @@
         });
 
         return out
-          .filter(function (call) {
-            return call._score >= 20;
-          })
+          .filter(function (call) { return call._score >= 20; })
           .sort(function (a, b) {
             if (b._score !== a._score) return b._score - a._score;
             return String(a._deadline_norm || '').localeCompare(String(b._deadline_norm || ''));
           });
       }
 
-      function populateDynamicTopicFilter(clusterName, results) {
+      function populateDynamicTopicFilter(results) {
         const availableTopics = new Set();
 
         results.forEach(function (call) {
-          if (call._thematic_norm === clusterName) {
-            (call._topics || []).forEach(function (topic) {
-              if (topic) availableTopics.add(topic);
-            });
-          }
+          (call._topics || []).forEach(function (topic) {
+            if (topic) availableTopics.add(topic);
+          });
         });
 
         const topics = Array.from(availableTopics).sort(function (a, b) {
@@ -743,13 +741,9 @@
           'Action: ' + (answers.action_type || 'Qualsiasi')
         ];
 
-        return (
-          '<div class="summary">' +
-          pills.map(function (item) {
-            return '<span class="pill">' + escapeHtml(item) + '</span>';
-          }).join('') +
-          '</div>'
-        );
+        return '<div class="summary">' + pills.map(function (item) {
+          return '<span class="pill">' + escapeHtml(item) + '</span>';
+        }).join('') + '</div>';
       }
 
       function renderCalls(filtered, answers) {
@@ -758,7 +752,7 @@
 
         let html = '';
         html += renderSummary(answers);
-        html += '<div class="meta-box">Il dropdown dei sottotemi e la ricerca keyword compaiono solo dopo la generazione dei risultati.</div>';
+        html += '<div class="meta-box">Il dropdown viene popolato con tutti i sottotemi disponibili nei risultati generati, non con una sola opzione.</div>';
         html += '<div class="stats">Call trovate: ' + liveFiltered.length + ' <span class="muted">totali dopo i filtri</span></div>';
 
         if (!liveFiltered.length) {
@@ -778,14 +772,8 @@
             call.deadline ? 'Deadline: ' + call.deadline : ''
           ].filter(Boolean).join(' · ');
 
-          const missionBadge = call.is_mission
-            ? '<span class="badge mission">Mission</span>'
-            : '';
-
-          const overrideBadge = call._manual_override
-            ? '<span class="badge override">Override</span>'
-            : '';
-
+          const missionBadge = call.is_mission ? '<span class="badge mission">Mission</span>' : '';
+          const overrideBadge = call._manual_override ? '<span class="badge override">Override</span>' : '';
           const overrideNote = call._manual_override_source
             ? '<div class="meta">Override applicato: ' + escapeHtml(call._manual_override_source) + '</div>'
             : '';
@@ -800,10 +788,6 @@
             ? '<div class="meta">Beneficiary hint: ' + escapeHtml(call.beneficiary_hint.join(', ')) + '</div>'
             : '';
 
-          const cumulationHtml = call._is_horizon
-            ? ''
-            : '<div class="cumulation-note"><strong>Cumulation con Horizon Europe:</strong> Verificare l’assenza di doppio finanziamento sulle stesse voci di costo.</div>';
-
           const urlHtml = call.url
             ? '<div class="meta">Link: <a href="' + encodeURI(call.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(call.url) + '</a></div>'
             : '';
@@ -815,7 +799,6 @@
               overrideNote +
               beneficiaryHtml +
               topicsHtml +
-              cumulationHtml +
               urlHtml +
             '</article>';
         });
@@ -843,8 +826,6 @@
       }
 
       async function loadCalls() {
-        if (Array.isArray(window.CALLS_DATA)) return window.CALLS_DATA;
-
         try {
           const response = await fetch('./calls.json', { cache: 'no-store' });
           const data = await response.json();
@@ -904,7 +885,6 @@
         if (!CALLS.length) {
           showResultsArea();
           resultsEl.innerHTML = '<div class="error">Non riesco a caricare <code>calls.json</code>.</div>';
-          resultsFooterEl.classList.add('hidden');
           resultsSection.scrollIntoView({ behavior:'smooth', block:'start' });
           return;
         }
@@ -915,8 +895,8 @@
 
         liveTopicFilterEl.value = '';
         keywordFilterEl.value = '';
-        populateDynamicTopicFilter(lastAnswers.thematic_cluster, lastGeneratedResults);
 
+        populateDynamicTopicFilter(lastGeneratedResults);
         showResultsArea();
         renderCalls(lastGeneratedResults, lastAnswers);
         resultsSection.scrollIntoView({ behavior:'smooth', block:'start' });
