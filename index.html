@@ -20,13 +20,12 @@
       --shadow:0 10px 30px rgba(15,23,42,.06);
       --radius-xl:28px;
       --radius-lg:20px;
-      --radius-md:14px;
       --radius-pill:999px;
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     }
 
-    *{ box-sizing:border-box; }
-    html{ scroll-behavior:smooth; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
 
     body{
       margin:0;
@@ -331,13 +330,8 @@
       border-color:#fecaca;
     }
 
-    .muted{
-      color:var(--muted);
-    }
-
-    .hidden{
-      display:none;
-    }
+    .muted{ color:var(--muted); }
+    .hidden{ display:none; }
 
     a{
       color:var(--primary);
@@ -358,18 +352,9 @@
     }
 
     @media (max-width: 760px){
-      .grid-2{
-        grid-template-columns:1fr;
-      }
-
-      .page{
-        padding:20px 14px 48px;
-      }
-
-      .form-card,
-      .results-card{
-        padding:18px;
-      }
+      .grid-2{ grid-template-columns:1fr; }
+      .page{ padding:20px 14px 48px; }
+      .form-card, .results-card{ padding:18px; }
     }
   </style>
 </head>
@@ -379,7 +364,7 @@
       <h1>Funding Call Matcher</h1>
       <p>
         Compila il questionario per generare le call più coerenti con il progetto.
-        I risultati e i filtri compaiono solo dopo la generazione, sotto al form.
+        Dopo il click su “Genera call”, compariranno sotto al form i risultati, il dropdown dei sottotemi e la ricerca full-text.
       </p>
     </header>
 
@@ -484,7 +469,7 @@
     <section id="resultsSection" class="card results-card hidden">
       <h2 class="section-title">Risultati</h2>
       <p class="section-subtitle">
-        I filtri sottotematici leggono direttamente i campi <code>subtopics</code> del file <code>calls.json</code>.
+        I filtri compaiono solo dopo la generazione dei risultati. Il dropdown usa il campo <code>subtopics</code>, mentre la ricerca usa <code>search_blob</code>.
       </p>
 
       <div id="postFilters" class="toolbar hidden">
@@ -497,7 +482,7 @@
 
         <div class="field">
           <label for="keyword_filter">Ricerca full-text</label>
-          <input id="keyword_filter" type="text" placeholder="Es. cyber resilience, hydrogen, cancer, smart cities..." />
+          <input id="keyword_filter" type="text" placeholder="Es. cybersecurity, hydrogen, cancer, smart city..." />
         </div>
       </div>
 
@@ -536,23 +521,6 @@
         CLIMA: '5',
         SOIL: '6'
       };
-
-      const THEMATIC_PRIORITY = [
-        'Health & Life Sciences',
-        'Culture, Creativity & Inclusion',
-        'Security & Resilience',
-        'Digital, Industry & Space',
-        'Climate, Energy & Mobility',
-        'Food, Bioeconomy & Environment',
-        'Defence',
-        'SME, Entrepreneurship & Market Uptake',
-        'External Action & International Cooperation',
-        'Climate-neutral & Smart Cities',
-        'Healthy Oceans, Seas, Coastal & Inland Waters',
-        'Clean Aviation',
-        'Research, Academia',
-        'Cross-cutting / Other'
-      ];
 
       function escapeHtml(value) {
         return String(value || '').replace(/[&<>"']/g, function (m) {
@@ -731,38 +699,39 @@
           });
       }
 
-      function applyLiveFilters(results) {
-        const topic = liveTopicFilterEl.value.trim();
-        const keyword = keywordFilterEl.value.trim().toLowerCase();
-
-        return results.filter(function (call) {
-          const okTopic = !topic || call._topics.includes(topic);
-          const okKeyword = !keyword || call._searchText.includes(keyword);
-          return okTopic && okKeyword;
-        });
-      }
-
       function populateDynamicTopicFilter(clusterName, results) {
-        const available = new Set();
+        const availableTopics = new Set();
 
         results.forEach(function (call) {
           if (call._thematic_norm === clusterName) {
             (call._topics || []).forEach(function (topic) {
-              available.add(topic);
+              if (topic) availableTopics.add(topic);
             });
           }
         });
 
-        let topics = Array.from(available).sort(function (a, b) {
+        const topics = Array.from(availableTopics).sort(function (a, b) {
           return prettyTopicLabel(a).localeCompare(prettyTopicLabel(b), 'it');
         });
 
         let html = '<option value="">Tutti i sottotemi</option>';
+
         topics.forEach(function (topic) {
           html += '<option value="' + escapeHtml(topic) + '">' + escapeHtml(prettyTopicLabel(topic)) + '</option>';
         });
 
         liveTopicFilterEl.innerHTML = html;
+      }
+
+      function applyLiveFilters(results) {
+        const selectedTopic = liveTopicFilterEl.value.trim();
+        const keyword = keywordFilterEl.value.trim().toLowerCase();
+
+        return results.filter(function (call) {
+          const okTopic = !selectedTopic || call._topics.includes(selectedTopic);
+          const okKeyword = !keyword || call._searchText.includes(keyword);
+          return okTopic && okKeyword;
+        });
       }
 
       function renderSummary(answers) {
@@ -789,7 +758,7 @@
 
         let html = '';
         html += renderSummary(answers);
-        html += '<div class="meta-box">La ricerca keyword usa il campo <strong>search_blob</strong>. I sottotemi vengono letti direttamente dal campo <strong>subtopics</strong> del file <code>calls.json</code>.</div>';
+        html += '<div class="meta-box">Il dropdown dei sottotemi e la ricerca keyword compaiono solo dopo la generazione dei risultati.</div>';
         html += '<div class="stats">Call trovate: ' + liveFiltered.length + ' <span class="muted">totali dopo i filtri</span></div>';
 
         if (!liveFiltered.length) {
@@ -817,14 +786,14 @@
             ? '<span class="badge override">Override</span>'
             : '';
 
+          const overrideNote = call._manual_override_source
+            ? '<div class="meta">Override applicato: ' + escapeHtml(call._manual_override_source) + '</div>'
+            : '';
+
           const topicsHtml = call._topics.length
             ? '<div class="topic-tags">' + call._topics.map(function (topic) {
                 return '<span class="topic-tag">' + escapeHtml(prettyTopicLabel(topic)) + '</span>';
               }).join('') + '</div>'
-            : '';
-
-          const overrideNote = call._manual_override_source
-            ? '<div class="meta">Override applicato: ' + escapeHtml(call._manual_override_source) + '</div>'
             : '';
 
           const beneficiaryHtml = Array.isArray(call.beneficiary_hint) && call.beneficiary_hint.length
@@ -936,7 +905,7 @@
           showResultsArea();
           resultsEl.innerHTML = '<div class="error">Non riesco a caricare <code>calls.json</code>.</div>';
           resultsFooterEl.classList.add('hidden');
-          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          resultsSection.scrollIntoView({ behavior:'smooth', block:'start' });
           return;
         }
 
@@ -944,13 +913,13 @@
         lastGeneratedResults = applyBaseFilters(CALLS, lastAnswers);
         visibleCount = PAGE_SIZE;
 
-        populateDynamicTopicFilter(lastAnswers.thematic_cluster, lastGeneratedResults);
         liveTopicFilterEl.value = '';
         keywordFilterEl.value = '';
+        populateDynamicTopicFilter(lastAnswers.thematic_cluster, lastGeneratedResults);
 
         showResultsArea();
         renderCalls(lastGeneratedResults, lastAnswers);
-        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        resultsSection.scrollIntoView({ behavior:'smooth', block:'start' });
       });
 
       liveTopicFilterEl.addEventListener('change', function () {
