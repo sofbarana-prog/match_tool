@@ -451,8 +451,6 @@
   resetBtn.addEventListener('click', function() {
     form.reset();
     results.innerHTML = '';
-    document.getElementById('searchBar').classList.remove('active');
-    document.getElementById('searchInput').value = '';
   });
 
   // ── Keyword filter ────────────────────────────────────────────────────────
@@ -479,7 +477,7 @@
       } else {
         let html = h3.dataset.original;
         terms.forEach(t => {
-          const re = new RegExp('(' + t.replace(/[.*+?^${}()|[\]\]/g,'\$&') + ')', 'gi');
+          const re = new RegExp('(' + t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi');
           html = html.replace(re, '<mark>$1</mark>');
         });
         h3.innerHTML = html;
