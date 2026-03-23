@@ -43,10 +43,6 @@
       font-size: 0.87rem; color: #1e3a5f; line-height: 1.45;
     }
     .cumul-note strong { font-weight: 600; }
-    #kw-bar { display:none; margin-bottom:14px; }
-    #kw-bar input { width:100%; padding:9px 14px; border:1px solid #cfcfcf; border-radius:10px; font-size:.97rem; box-sizing:border-box; }
-    #kw-bar input:focus { border-color:#2563eb; outline:none; box-shadow:0 0 0 3px #dbeafe; }
-    .call.kw-hidden { display:none; }
     @media (max-width: 760px) { .row { grid-template-columns: 1fr; } }
   </style>
 </head>
@@ -167,10 +163,6 @@
       </div>
     </form>
 
-    <div id="kw-bar">
-      <input type="text" id="kw-input" placeholder="Filter by keyword… e.g. hydrogen, batteries, AI" autocomplete="off" />
-      <p id="kw-count" style="margin:6px 0 0;font-size:.88rem;color:#6b7280"></p>
-    </div>
     <section id="results" class="results" aria-live="polite"></section>
 
     <footer>
@@ -415,9 +407,6 @@
     });
 
     results.innerHTML = html;
-    document.getElementById('kw-bar').style.display = 'block';
-    document.getElementById('kw-input').value = '';
-    document.getElementById('kw-count').textContent = '';
     results.scrollIntoView({ behavior: 'smooth' });
   }
 
@@ -433,39 +422,9 @@
     renderResults(answers, filterCalls(answers));
   });
 
-  resetBtn.addEventListener('click', function() {
-    form.reset();
-    results.innerHTML = '';
-    document.getElementById('kw-bar').style.display = 'none';
-    document.getElementById('kw-input').value = '';
-    document.getElementById('kw-count').textContent = '';
-  });
-
-
-  // ── Keyword filter ──────────────────────────────────────────────────────────
-  function applySearch() {
-    var input = document.getElementById('kw-input');
-    var count = document.getElementById('kw-count');
-    if (!input) return;
-    var raw = input.value.trim().toLowerCase();
-    var terms = raw ? raw.split(/\s+/) : [];
-    var cards = document.querySelectorAll('#results .call');
-    var visible = 0;
-    cards.forEach(function(card) {
-      var text = card.textContent.toLowerCase();
-      var show = terms.length === 0 || terms.every(function(t){ return text.indexOf(t) >= 0; });
-      card.classList.toggle('kw-hidden', !show);
-      if (show) visible++;
-    });
-    if (count) {
-      count.textContent = terms.length
-        ? (visible + ' of ' + cards.length + ' calls match')
-        : '';
-    }
-  }
-  document.getElementById('kw-input').addEventListener('input', applySearch);
-
+  resetBtn.addEventListener('click', function() { form.reset(); results.innerHTML = ''; });
 })();
 </script>
 </body>
 </html>
+
