@@ -113,47 +113,95 @@ PROGRAMME_THEMATIC_MAP = [
 
 # (prefix, subcode_or_None, cluster_num, cluster_label, thematic)
 URL_RULES = [
-    ("MISS","CIT",   "M-CIT", "Climate-neutral & Smart Cities",               "Climate-neutral & Smart Cities"),
-    ("MISS","OCEAN", "M-OCEAN","Healthy Oceans, Seas, Coastal & Inland Waters","Healthy Oceans, Seas, Coastal & Inland Waters"),
-    ("MISS","CLIMA", "5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
-    ("MISS","CANCER","1",     "Health",                                        "Health & Life Sciences"),
-    ("MISS","SOIL",  "6",     "Food, Bioeconomy, Natural Resources, Agriculture and Environment","Food, Bioeconomy & Environment"),
-    ("MISS","CROSS", "",      "",                                              "Cross-cutting / Other"),
-    ("HLTH",    None,"1",     "Health",                                        "Health & Life Sciences"),
-    ("EIC",     None,"",      "",                                              "SME, Entrepreneurship & Market Uptake"),
-    ("EIE",     None,"",      "",                                              "SME, Entrepreneurship & Market Uptake"),
-    ("EIT",     None,"",      "",                                              "SME, Entrepreneurship & Market Uptake"),
-    ("CID",     None,"5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
-    ("EURATOM", None,"5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
-    ("EUROHPC", None,"4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
-    ("JU-CLEAN-AVIATION",None,"","",                                           "Clean Aviation"),
-    ("JU-",     None,"",      "",                                              "Climate, Energy & Mobility"),
-    ("MSCA",    None,"",      "",                                              "Cross-cutting / Other"),
-    ("NEB",     None,"",      "",                                              "Climate-neutral & Smart Cities"),
-    ("RAISE",   None,"",      "",                                              "Cross-cutting / Other"),
-    ("WIDERA",  None,"",      "",                                              "Cross-cutting / Other"),
-    ("INFRA",   None,"",      "",                                              "Cross-cutting / Other"),
-    ("AGRIP",   None,"6",     "Food, Bioeconomy, Natural Resources, Agriculture and Environment","Food, Bioeconomy & Environment"),
-    ("EUAF",    None,"",      "",                                              "Cross-cutting / Other"),
-    ("DIGITAL", None,"4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
-    ("UCPM",    None,"",      "",                                              "Cross-cutting / Other"),
-    ("RFCS",    None,"5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
-    ("EUBA",    None,"",      "",                                              "External Action & International Cooperation"),
-    ("PPPA","CHIPS","4",      "Digital, Industry and Space",                   "Digital, Industry & Space"),
-    ("PPPA","MEDIA","",       "",                                              "Culture, Creativity & Inclusion"),
-    ("PPPA",    None,"4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
-    ("RENEWFM", None,"5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
-    ("SOCPL",   None,"",      "",                                              "Culture, Creativity & Inclusion"),
-    ("ERC",     None,"",      "",                                              "Cross-cutting / Other"),
-    ("EMFAF",   None,"6",     "Food, Bioeconomy, Natural Resources, Agriculture and Environment","Food, Bioeconomy & Environment"),
-    ("JUST",    None,"",      "",                                              "Culture, Creativity & Inclusion"),
-    ("I3",      None,"",      "",                                              "SME, Entrepreneurship & Market Uptake"),
+    ("MISS","CIT",      "M-CIT", "Climate-neutral & Smart Cities",               "Climate-neutral & Smart Cities"),
+    ("MISS","OCEAN",    "M-OCEAN","Healthy Oceans, Seas, Coastal & Inland Waters","Healthy Oceans, Seas, Coastal & Inland Waters"),
+    ("MISS","CLIMA",    "5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
+    ("MISS","CANCER",   "1",     "Health",                                        "Health & Life Sciences"),
+    ("MISS","SOIL",     "6",     "Food, Bioeconomy, Natural Resources, Agriculture and Environment","Food, Bioeconomy & Environment"),
+    ("MISS","CROSS",    "",      "",                                              "Cross-cutting / Other"),
+    ("HLTH",     None,  "1",     "Health",                                        "Health & Life Sciences"),
+    ("EIC",      None,  "",      "",                                              "SME, Entrepreneurship & Market Uptake"),
+    ("EIE",      None,  "",      "",                                              "SME, Entrepreneurship & Market Uptake"),
+    # EIT: EITUM-BP is Cities mission; other EIT → SME
+    ("EITUM-BP", None,  "M-CIT", "Climate-neutral & Smart Cities",               "Climate-neutral & Smart Cities"),
+    ("EIT",      None,  "",      "",                                              "SME, Entrepreneurship & Market Uptake"),
+    ("CID",      None,  "5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
+    ("EURATOM",  None,  "5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
+    ("EUROHPC",  None,  "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
+    ("JU-CLEAN-AVIATION",None,"","",                                              "Clean Aviation"),
+    ("JU-",      None,  "",      "",                                              "Climate, Energy & Mobility"),
+    ("MSCA",     None,  "",      "",                                              "Cross-cutting / Other"),
+    ("NEB",      None,  "",      "",                                              "Climate-neutral & Smart Cities"),
+    # RAISE → Digital/AI in Science
+    ("RAISE",    None,  "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
+    ("WIDERA",   None,  "",      "",                                              "Cross-cutting / Other"),
+    # INFRA subcodes: CL3-INFRA → Security; TECH/SERV/DEV/EOSC split below
+    # CL3 INFRA (security-related infrastructure) must come before generic INFRA rules
+    ("CL3","INFRA",     "3",     "Civil Security for Society",                    "Security & Resilience"),
+    # INFRA-TECH → Digital (instruments, digital twins)
+    ("INFRA","TECH",    "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
+    # INFRA-SERV → Digital (access to RI services, EOSC services)
+    ("INFRA","SERV",    "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
+    # INFRA-DEV and INFRA-EOSC → Research infrastructure (Cross-cutting)
+    ("INFRA","DEV",     "",      "",                                              "Cross-cutting / Other"),
+    ("INFRA","EOSC",    "",      "",                                              "Cross-cutting / Other"),
+    # Generic INFRA fallback → Cross-cutting
+    ("INFRA",    None,  "",      "",                                              "Cross-cutting / Other"),
+    ("AGRIP",    None,  "6",     "Food, Bioeconomy, Natural Resources, Agriculture and Environment","Food, Bioeconomy & Environment"),
+    # EUAF → Digital (forensics, digital tools, surveillance)
+    ("EUAF",     None,  "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
+    ("DIGITAL",  None,  "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
+    ("UCPM",     None,  "",      "",                                              "Cross-cutting / Other"),
+    ("RFCS",     None,  "5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
+    ("EUBA",     None,  "",      "",                                              "External Action & International Cooperation"),
+    ("PPPA","CHIPS",    "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
+    ("PPPA","MEDIA",    "",      "",                                              "Culture, Creativity & Inclusion"),
+    ("PPPA",     None,  "4",     "Digital, Industry and Space",                   "Digital, Industry & Space"),
+    ("RENEWFM",  None,  "5",     "Climate, Energy and Mobility",                  "Climate, Energy & Mobility"),
+    ("SOCPL",    None,  "",      "",                                              "Culture, Creativity & Inclusion"),
+    ("ERC",      None,  "",      "",                                              "Cross-cutting / Other"),
+    ("EMFAF",    None,  "6",     "Food, Bioeconomy, Natural Resources, Agriculture and Environment","Food, Bioeconomy & Environment"),
+    ("JUST",     None,  "",      "",                                              "Culture, Creativity & Inclusion"),
+    ("I3",       None,  "",      "",                                              "SME, Entrepreneurship & Market Uptake"),
+]
+
+# Numeric-ID call classification by known acronym in name
+# Used as a name-based fallback for calls without a structured URL
+NUMERIC_ID_NAME_RULES = [
+    # Health partnerships and joint calls
+    ("OHAMR",       "Health & Life Sciences"),
+    ("ERA4HEALTH",  "Health & Life Sciences"),
+    ("ERA4 HEALTH", "Health & Life Sciences"),
+    ("BRAINHEALTH", "Health & Life Sciences"),
+    ("EP BRAINHEALTH","Health & Life Sciences"),
+    ("ERDERA",      "Health & Life Sciences"),
+    ("BE READY",    "Health & Life Sciences"),   # id=12982 rare diseases partnership
+    ("OVERWEIGHT",  "Health & Life Sciences"),
+    ("OBESITY",     "Health & Life Sciences"),
+    ("CARDIOVASC",  "Health & Life Sciences"),
+    ("CLINICAL TRIAL","Health & Life Sciences"),
+    ("NEUROSCI",    "Health & Life Sciences"),
+    ("RARE DISEASE","Health & Life Sciences"),
+    # Cities
+    ("EITUM",       "Climate-neutral & Smart Cities"),
+    ("URBAN MOBILITY","Climate-neutral & Smart Cities"),
+    ("DRIVING URBAN","Climate-neutral & Smart Cities"),
+    # SME / market uptake
+    ("EIC AWARDEE", "SME, Entrepreneurship & Market Uptake"),
+    ("INNOMATCH",   "SME, Entrepreneurship & Market Uptake"),
+    ("STARTUP",     "SME, Entrepreneurship & Market Uptake"),
+    # Food / environment
+    ("FOOD SUSTAINABILITY","Food, Bioeconomy & Environment"),
+    ("MARINE BIODIVERSITY","Food, Bioeconomy & Environment"),
+    ("BLUEACTION",  "Food, Bioeconomy & Environment"),
+    ("TASC-RESTOREMED","Food, Bioeconomy & Environment"),
+    ("RESTORE",     "Food, Bioeconomy & Environment"),
+    ("FERMENTED",   "Food, Bioeconomy & Environment"),
 ]
 
 URL_BENEFICIARY_OVERRIDE = {
     "MSCA":  ["Research organisation"],
     "INFRA": ["Research organisation"],
-    "EUAF":  ["Research organisation"],
     "EUBA":  ["Public body"],
 }
 
@@ -173,11 +221,20 @@ def url_classify(url: str):
         if prefix not in tid:
             continue
         if subcode is not None:
-            if f"-{subcode}-" not in tid and not tid.endswith(f"-{subcode}"):
+            # subcode can appear anywhere in the topic id (e.g. CL3...INFRA, INFRA...TECH)
+            if subcode not in tid:
                 continue
         benef = URL_BENEFICIARY_OVERRIDE.get(prefix, None)
         return c_num, c_label, thematic, benef
     return "", "", "", None
+
+def name_classify(name: str):
+    """Fallback classification for numeric-ID calls based on known name keywords."""
+    name_up = (name or "").upper()
+    for keyword, thematic in NUMERIC_ID_NAME_RULES:
+        if keyword.upper() in name_up:
+            return thematic
+    return ""
 
 def prog_thematic(prog: str) -> str:
     pl = (prog or "").lower()
@@ -496,7 +553,7 @@ def to_call(row: dict) -> dict:
         cluster_num = u_cnum
 
     cluster_label = u_clabel or THEMATIC_MAP.get(cluster_num, "")
-    thematic      = u_thematic or resolve_thematic(cluster_num, prog_raw)
+    thematic      = u_thematic or resolve_thematic(cluster_num, prog_raw) or name_classify(row.get("name",""))
     action        = normalize_action(action_raw)
     is_mission    = bool("/HORIZON-MISS" in url.upper())
 
@@ -668,7 +725,7 @@ def main(out_path: Path):
             browser.close()
             return
         max_pages = math.ceil(total / PAGE_SIZE)
-        print(f"Totale: {total} call | pagine: {max_pages}")
+        print(f"✅ Totale: {total} call | pagine: {max_pages}")
 
         for pnum in range(1, max_pages + 1):
             remaining = total - (pnum - 1) * PAGE_SIZE
@@ -739,7 +796,7 @@ def main(out_path: Path):
         json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    print(f"\n Scritto {out_path} con {len(calls)} call")
+    print(f"\n✅ Scritto {out_path} con {len(calls)} call")
 
 
 if __name__ == "__main__":
