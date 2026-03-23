@@ -13,14 +13,12 @@
       --muted:#6b7280;
       --primary:#2563eb;
       --primary-dark:#1d4ed8;
-      --secondary:#475569;
       --warning:#f59e0b;
       --warning-bg:#fff7e6;
       --success-bg:#f0fdf4;
       --success-border:#bbf7d0;
       --shadow:0 8px 24px rgba(15,23,42,.06);
       --radius:16px;
-      --gap:14px;
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     }
 
@@ -169,13 +167,17 @@
     }
 
     .toolbar{
-      display:flex;
+      display:none;
       flex-wrap:wrap;
       gap:12px;
       align-items:end;
       margin-bottom:16px;
       padding-bottom:14px;
       border-bottom:1px solid var(--border);
+    }
+
+    .toolbar.visible{
+      display:flex;
     }
 
     .toolbar .field{
@@ -331,9 +333,9 @@
     <header class="hero">
       <h1>Funding Call Matcher</h1>
       <p>
-        Seleziona il profilo del progetto e genera una lista di call coerenti.
-        Dopo il matching puoi filtrare i risultati con un livello più fine per topic come
-        climate, energy, hydrogen, batteries, mobility, renewables e altri.
+        Compila il questionario, genera le call coerenti con il progetto
+        e poi filtra i risultati per topic specifici come climate, energy,
+        hydrogen, batteries e altri.
       </p>
     </header>
 
@@ -428,31 +430,6 @@
             </select>
           </fieldset>
 
-          <fieldset>
-            <legend>5) Focus topic</legend>
-            <label for="focus_topic">Filtro tematico fine</label>
-            <p class="hint">
-              Questo filtro lavora sui risultati trovati e ti permette di restringere per topic come climate, energy, hydrogen, batteries, ecc.
-            </p>
-            <select id="focus_topic" name="focus_topic">
-              <option value="">Qualsiasi</option>
-              <option value="climate">Climate</option>
-              <option value="energy">Energy</option>
-              <option value="hydrogen">Hydrogen</option>
-              <option value="batteries">Batteries</option>
-              <option value="mobility">Mobility</option>
-              <option value="transport">Transport</option>
-              <option value="renewables">Renewables</option>
-              <option value="storage">Storage</option>
-              <option value="smart-grids">Smart grids</option>
-              <option value="decarbonisation">Decarbonisation</option>
-              <option value="buildings">Buildings</option>
-              <option value="cities">Cities</option>
-              <option value="circularity">Circularity</option>
-              <option value="water">Water</option>
-            </select>
-          </fieldset>
-
           <div class="actions">
             <button type="submit" class="primary">Genera call</button>
             <button type="button" id="resetBtn" class="secondary">Pulisci</button>
@@ -461,9 +438,9 @@
       </aside>
 
       <main class="results-panel">
-        <div class="toolbar">
+        <div id="postFilters" class="toolbar">
           <div class="field">
-            <label for="live_topic_filter">Filtra i risultati già generati</label>
+            <label for="live_topic_filter">Filtra i risultati per topic</label>
             <select id="live_topic_filter">
               <option value="">Tutti i topic</option>
               <option value="climate">Climate</option>
@@ -504,6 +481,7 @@
       const resultsEl = document.getElementById('results');
       const resetBtn = document.getElementById('resetBtn');
       const lastUpdatedEl = document.getElementById('lastUpdated');
+      const postFiltersEl = document.getElementById('postFilters');
       const liveTopicFilterEl = document.getElementById('live_topic_filter');
       const keywordFilterEl = document.getElementById('keyword_filter');
 
@@ -714,7 +692,6 @@
         const wantedThematic = answers.thematic_cluster || '';
         const wantedOfficial = normalizeCluster(answers.official_cluster);
         const wantedAction = answers.action_type || '';
-        const wantedTopic = answers.focus_topic || '';
         const projectEnd = projectEndIso(answers.closure_year, answers.closure_quarter);
 
         if (wantedThematic && call._thematic_norm === wantedThematic) score += 60;
@@ -745,7 +722,6 @@
 
         if (projectEnd && call._deadline_norm && call._deadline_norm > projectEnd) score += 15;
         if (call.is_mission) score += 8;
-        if (wantedTopic && call._topics.includes(wantedTopic)) score += 35;
 
         return score;
       }
@@ -754,7 +730,6 @@
         const wantedThematic = answers.thematic_cluster || '';
         const wantedOfficial = normalizeCluster(answers.official_cluster);
         const wantedAction = answers.action_type || '';
-        const wantedTopic = answers.focus_topic || '';
         const projectEnd = projectEndIso(answers.closure_year, answers.closure_quarter);
 
         let out = calls.map(enrichCall);
@@ -780,10 +755,6 @@
 
         if (projectEnd) {
           out = out.filter(call => call._deadline_norm && call._deadline_norm > projectEnd);
-        }
-
-        if (wantedTopic) {
-          out = out.filter(call => call._topics.includes(wantedTopic));
         }
 
         out.forEach(call => {
@@ -816,8 +787,7 @@
           `Natura: ${answers.project_nature || 'Qualsiasi'}`,
           `Cluster: ${answers.thematic_cluster || '—'}`,
           `Cluster HE: ${answers.official_cluster || 'Qualsiasi'}`,
-          `Action: ${answers.action_type || 'Qualsiasi'}`,
-          `Focus topic: ${answers.focus_topic || 'Qualsiasi'}`
+          `Action: ${answers.action_type || 'Qualsiasi'}`
         ];
 
         return `
@@ -830,6 +800,7 @@
       function renderCalls(filtered, answers) {
         if (!CALLS.length) {
           resultsEl.innerHTML = `<div class="error">Non riesco a caricare <code>calls.json</code>.</div>`;
+          postFiltersEl.classList.remove('visible');
           return;
         }
 
@@ -837,12 +808,13 @@
 
         let html = '';
         html += renderSummary(answers);
-        html += `<div class="meta-box">Il filtro “focus topic” usa un sistema di tagging automatico basato su parole chiave presenti nei campi testuali della call.</div>`;
+        html += `<div class="meta-box">Ora puoi filtrare le call già generate usando il filtro per topic o una keyword libera.</div>`;
         html += `<div class="stats">Call trovate: ${liveFiltered.length} <span class="muted">su ${filtered.length} risultati generati</span></div>`;
 
         if (!liveFiltered.length) {
           html += `<div class="empty">Nessuna call corrisponde ai filtri attivi.</div>`;
           resultsEl.innerHTML = html;
+          postFiltersEl.classList.add('visible');
           return;
         }
 
@@ -881,6 +853,7 @@
         }
 
         resultsEl.innerHTML = html;
+        postFiltersEl.classList.add('visible');
       }
 
       async function loadCalls() {
@@ -916,12 +889,11 @@
           project_nature: fd.get('project_nature'),
           thematic_cluster: fd.get('thematic_cluster'),
           official_cluster: fd.get('official_cluster'),
-          action_type: fd.get('action_type'),
-          focus_topic: fd.get('focus_topic')
+          action_type: fd.get('action_type')
         };
       }
 
-      function regenerate() {
+      function regenerateLiveFilters() {
         if (!lastAnswers) return;
         renderCalls(lastGeneratedResults, lastAnswers);
       }
@@ -931,11 +903,15 @@
 
         lastAnswers = getAnswers();
         lastGeneratedResults = applyBaseFilters(CALLS, lastAnswers);
+
+        liveTopicFilterEl.value = '';
+        keywordFilterEl.value = '';
+
         renderCalls(lastGeneratedResults, lastAnswers);
       });
 
-      liveTopicFilterEl.addEventListener('change', regenerate);
-      keywordFilterEl.addEventListener('input', regenerate);
+      liveTopicFilterEl.addEventListener('change', regenerateLiveFilters);
+      keywordFilterEl.addEventListener('input', regenerateLiveFilters);
 
       resetBtn.addEventListener('click', function () {
         form.reset();
@@ -943,6 +919,7 @@
         keywordFilterEl.value = '';
         lastGeneratedResults = [];
         lastAnswers = null;
+        postFiltersEl.classList.remove('visible');
         resultsEl.innerHTML = `<div class="empty">Compila il questionario e genera i risultati.</div>`;
       });
 
