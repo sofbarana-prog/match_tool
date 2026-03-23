@@ -6,23 +6,32 @@
   <title>Funding Call Matcher</title>
   <style>
     :root{
-      --bg:#f6f7fb;
+      --bg:#f5f7fb;
       --card:#ffffff;
-      --border:#e5e7eb;
-      --text:#111827;
+      --border:#d9dee8;
+      --text:#182033;
       --muted:#6b7280;
       --primary:#2563eb;
       --primary-dark:#1d4ed8;
+      --secondary:#e5e7eb;
       --warning:#f59e0b;
-      --warning-bg:#fff7e6;
       --success-bg:#f0fdf4;
       --success-border:#bbf7d0;
-      --shadow:0 8px 24px rgba(15,23,42,.06);
-      --radius:16px;
+      --shadow:0 10px 30px rgba(15,23,42,.06);
+      --radius-xl:28px;
+      --radius-lg:20px;
+      --radius-md:14px;
+      --radius-pill:999px;
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     }
 
-    * { box-sizing: border-box; }
+    *{
+      box-sizing:border-box;
+    }
+
+    html{
+      scroll-behavior:smooth;
+    }
 
     body{
       margin:0;
@@ -30,126 +39,127 @@
       color:var(--text);
     }
 
-    .container{
-      max-width:1180px;
+    .page{
+      max-width:1120px;
       margin:0 auto;
-      padding:28px 18px 60px;
+      padding:32px 20px 72px;
     }
 
     .hero{
-      margin-bottom:20px;
+      margin-bottom:24px;
     }
 
     .hero h1{
-      margin:0 0 8px;
+      margin:0 0 10px;
       font-size:2rem;
-      line-height:1.15;
+      line-height:1.1;
     }
 
     .hero p{
       margin:0;
+      max-width:860px;
       color:var(--muted);
-      line-height:1.55;
-      max-width:920px;
+      line-height:1.6;
+      font-size:1rem;
     }
 
-    .layout{
-      display:grid;
-      grid-template-columns: 380px 1fr;
-      gap:20px;
-      align-items:start;
-    }
-
-    .panel, .results-panel{
+    .card{
       background:var(--card);
       border:1px solid var(--border);
-      border-radius:var(--radius);
+      border-radius:var(--radius-xl);
       box-shadow:var(--shadow);
     }
 
-    .panel{
-      padding:18px;
-      position:sticky;
-      top:18px;
+    .form-card{
+      padding:24px;
     }
 
-    .results-panel{
-      padding:18px;
-      min-height:280px;
+    .results-card{
+      margin-top:28px;
+      padding:24px;
     }
 
     fieldset{
-      margin:0 0 16px;
+      margin:0 0 18px;
       border:1px solid var(--border);
-      border-radius:14px;
-      padding:14px;
+      border-radius:var(--radius-lg);
+      padding:16px;
     }
 
     legend{
       padding:0 8px;
-      font-weight:700;
+      font-weight:800;
+      font-size:1rem;
     }
 
     label{
       display:block;
       margin:10px 0 6px;
       font-size:.95rem;
-      font-weight:600;
+      font-weight:700;
     }
 
     .hint{
       margin:4px 0 0;
       color:var(--muted);
-      font-size:.86rem;
-      line-height:1.45;
+      font-size:.88rem;
+      line-height:1.5;
     }
 
     .grid-2{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:12px;
+      gap:14px;
     }
 
-    select, input[type="text"]{
+    select,
+    input[type="text"]{
       width:100%;
-      border:1px solid #d1d5db;
+      border:1px solid #cfd6e2;
       border-radius:12px;
-      padding:11px 12px;
-      font-size:.96rem;
+      padding:12px 13px;
+      font-size:.97rem;
       background:#fff;
       color:var(--text);
+      outline:none;
+    }
+
+    select:focus,
+    input[type="text"]:focus{
+      border-color:#93c5fd;
+      box-shadow:0 0 0 4px rgba(37,99,235,.10);
     }
 
     .radio-group{
       display:flex;
       flex-wrap:wrap;
-      gap:10px 14px;
+      gap:10px 16px;
       margin-top:8px;
     }
 
-    .radio-group label{
-      margin:0;
-      font-weight:500;
+    .radio-option{
       display:flex;
       align-items:center;
-      gap:6px;
+      gap:7px;
+      font-weight:500;
+      margin:0;
     }
 
     .actions{
       display:flex;
       flex-wrap:wrap;
       gap:10px;
-      margin-top:10px;
+      margin-top:8px;
     }
 
     button{
       border:0;
       border-radius:12px;
-      padding:11px 14px;
-      font-size:.95rem;
-      font-weight:700;
+      padding:12px 16px;
+      font-size:.96rem;
+      font-weight:800;
       cursor:pointer;
-      transition:.15s ease;
+      transition:.18s ease;
     }
 
     button.primary{
@@ -162,38 +172,19 @@
     }
 
     button.secondary{
-      background:#e5e7eb;
+      background:var(--secondary);
       color:#111827;
-    }
-
-    .toolbar{
-      display:none;
-      flex-wrap:wrap;
-      gap:12px;
-      align-items:end;
-      margin-bottom:16px;
-      padding-bottom:14px;
-      border-bottom:1px solid var(--border);
-    }
-
-    .toolbar.visible{
-      display:flex;
-    }
-
-    .toolbar .field{
-      min-width:220px;
-      flex:1 1 220px;
     }
 
     .meta-box{
       padding:12px 14px;
       background:#f8fafc;
       border:1px solid var(--border);
-      border-radius:12px;
-      margin-bottom:16px;
+      border-radius:14px;
       color:var(--muted);
       font-size:.92rem;
-      line-height:1.5;
+      line-height:1.55;
+      margin-bottom:16px;
     }
 
     .summary{
@@ -207,21 +198,48 @@
       display:inline-flex;
       align-items:center;
       padding:7px 11px;
-      border-radius:999px;
+      border-radius:var(--radius-pill);
       background:#fff;
       border:1px solid var(--border);
-      font-size:.88rem;
+      font-size:.87rem;
+    }
+
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      align-items:end;
+      margin-bottom:18px;
+      padding-bottom:16px;
+      border-bottom:1px solid var(--border);
+    }
+
+    .toolbar .field{
+      min-width:220px;
+      flex:1 1 220px;
+    }
+
+    .section-title{
+      margin:0 0 6px;
+      font-size:1.35rem;
+      line-height:1.2;
+    }
+
+    .section-subtitle{
+      margin:0 0 18px;
+      color:var(--muted);
+      line-height:1.55;
     }
 
     .stats{
       margin:0 0 18px;
       font-size:1rem;
-      font-weight:700;
+      font-weight:800;
     }
 
     .call{
       border:1px solid var(--border);
-      border-radius:16px;
+      border-radius:18px;
       padding:16px;
       background:#fff;
       margin-bottom:14px;
@@ -235,13 +253,13 @@
     .call h3{
       margin:0 0 8px;
       font-size:1.06rem;
-      line-height:1.4;
+      line-height:1.45;
     }
 
     .call .meta{
       color:#475569;
       font-size:.93rem;
-      line-height:1.55;
+      line-height:1.6;
       margin:6px 0;
     }
 
@@ -276,7 +294,7 @@
       color:#1d4ed8;
       border:1px solid #bfdbfe;
       font-size:.8rem;
-      font-weight:600;
+      font-weight:700;
     }
 
     .cumulation-note{
@@ -286,13 +304,14 @@
       background:var(--success-bg);
       border:1px solid var(--success-border);
       font-size:.88rem;
-      line-height:1.5;
+      line-height:1.55;
       color:#14532d;
     }
 
-    .empty, .error{
+    .empty,
+    .error{
       padding:16px;
-      border-radius:14px;
+      border-radius:16px;
       border:1px solid var(--border);
       background:#fff;
     }
@@ -303,184 +322,189 @@
       border-color:#fecaca;
     }
 
+    .muted{
+      color:var(--muted);
+    }
+
     a{
       color:var(--primary);
       word-break:break-word;
     }
 
-    .muted{
-      color:var(--muted);
+    .hidden{
+      display:none;
     }
 
-    @media (max-width: 980px){
-      .layout{
-        grid-template-columns:1fr;
-      }
-      .panel{
-        position:static;
-      }
-    }
-
-    @media (max-width: 640px){
+    @media (max-width: 760px){
       .grid-2{
         grid-template-columns:1fr;
+      }
+
+      .page{
+        padding:20px 14px 48px;
+      }
+
+      .form-card,
+      .results-card{
+        padding:18px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="page">
     <header class="hero">
       <h1>Funding Call Matcher</h1>
       <p>
-        Compila il questionario, genera le call coerenti con il progetto
-        e poi filtra i risultati per topic specifici come climate, energy,
-        hydrogen, batteries e altri.
+        Compila il questionario per generare le call più coerenti con il progetto.
+        I risultati e i filtri avanzati compariranno solo dopo la generazione, più in basso nella pagina.
       </p>
     </header>
 
-    <div class="layout">
-      <aside class="panel">
-        <div id="lastUpdated" class="meta-box" style="display:none;"></div>
+    <section class="card form-card">
+      <div id="lastUpdated" class="meta-box hidden"></div>
 
-        <form id="surveyForm">
-          <fieldset>
-            <legend>1) Timeframe progetto</legend>
-            <div class="grid-2">
-              <div>
-                <label for="closure_year">Anno di chiusura</label>
-                <select id="closure_year" name="closure_year" required>
-                  <option value="" selected disabled>Seleziona…</option>
-                  <option value="2026">2026</option>
-                  <option value="2027">2027</option>
-                  <option value="2028">2028</option>
-                  <option value="2029">2029</option>
-                  <option value="2030">2030</option>
-                </select>
-              </div>
-              <div>
-                <label for="closure_quarter">Quarter</label>
-                <select id="closure_quarter" name="closure_quarter" required>
-                  <option value="" selected disabled>Seleziona…</option>
-                  <option value="Q1">Q1</option>
-                  <option value="Q2">Q2</option>
-                  <option value="Q3">Q3</option>
-                  <option value="Q4">Q4</option>
-                </select>
-              </div>
+      <form id="surveyForm">
+        <fieldset>
+          <legend>1) Timeframe progetto</legend>
+          <div class="grid-2">
+            <div>
+              <label for="closure_year">Anno di chiusura</label>
+              <select id="closure_year" name="closure_year" required>
+                <option value="" selected disabled>Seleziona…</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+                <option value="2029">2029</option>
+                <option value="2030">2030</option>
+              </select>
             </div>
-          </fieldset>
 
-          <fieldset>
-            <legend>2) Natura del progetto</legend>
-            <label>Tipologia ricerca</label>
-            <div class="radio-group">
-              <label><input type="radio" name="project_nature" value="" checked> Qualsiasi</label>
-              <label><input type="radio" name="project_nature" value="basic"> Basic</label>
-              <label><input type="radio" name="project_nature" value="applied"> Applied</label>
-              <label><input type="radio" name="project_nature" value="industrial"> Industrial</label>
+            <div>
+              <label for="closure_quarter">Quarter</label>
+              <select id="closure_quarter" name="closure_quarter" required>
+                <option value="" selected disabled>Seleziona…</option>
+                <option value="Q1">Q1</option>
+                <option value="Q2">Q2</option>
+                <option value="Q3">Q3</option>
+                <option value="Q4">Q4</option>
+              </select>
             </div>
-          </fieldset>
-
-          <fieldset>
-            <legend>3) Cluster</legend>
-            <label for="thematic_cluster">Area tematica principale</label>
-            <select id="thematic_cluster" name="thematic_cluster" required>
-              <option value="" selected disabled>Seleziona…</option>
-              <option value="Health &amp; Life Sciences">Health &amp; Life Sciences</option>
-              <option value="Culture, Creativity &amp; Inclusion">Culture, Creativity &amp; Inclusion</option>
-              <option value="Security &amp; Resilience">Security &amp; Resilience</option>
-              <option value="Digital, Industry &amp; Space">Digital, Industry &amp; Space</option>
-              <option value="Climate, Energy &amp; Mobility">Climate, Energy &amp; Mobility</option>
-              <option value="Food, Bioeconomy &amp; Environment">Food, Bioeconomy &amp; Environment</option>
-              <option value="Defence">Defence</option>
-              <option value="SME, Entrepreneurship &amp; Market Uptake">SME, Entrepreneurship &amp; Market Uptake</option>
-              <option value="External Action &amp; International Cooperation">External Action &amp; International Cooperation</option>
-              <option value="Climate-neutral &amp; Smart Cities">Climate-neutral &amp; Smart Cities</option>
-              <option value="Healthy Oceans, Seas, Coastal &amp; Inland Waters">Healthy Oceans, Seas, Coastal &amp; Inland Waters</option>
-              <option value="Clean Aviation">Clean Aviation</option>
-              <option value="Cross-cutting / Other">Cross-cutting / Other</option>
-            </select>
-
-            <label for="official_cluster" style="margin-top:12px;">Cluster Horizon Europe ufficiale</label>
-            <p class="hint">
-              Se scegli un cluster ufficiale, il matching si restringe alle call Horizon Europe coerenti con quel cluster.
-            </p>
-            <select id="official_cluster" name="official_cluster">
-              <option value="">Qualsiasi / non applicabile</option>
-              <option value="1">Cluster 1: Health</option>
-              <option value="2">Cluster 2: Culture, Creativity and Inclusive Society</option>
-              <option value="3">Cluster 3: Civil Security for Society</option>
-              <option value="4">Cluster 4: Digital, Industry and Space</option>
-              <option value="5">Cluster 5: Climate, Energy and Mobility</option>
-              <option value="6">Cluster 6: Food, Bioeconomy, Natural Resources, Agriculture and Environment</option>
-            </select>
-          </fieldset>
-
-          <fieldset>
-            <legend>4) Tipo di azione</legend>
-            <label for="action_type">Action type</label>
-            <select id="action_type" name="action_type">
-              <option value="">Qualsiasi</option>
-              <option value="IA">Innovation Action (IA)</option>
-              <option value="RIA">Research and Innovation Action (RIA)</option>
-              <option value="CSA">Coordination and Support Action (CSA)</option>
-              <option value="COFUND">COFUND</option>
-              <option value="OTHER">Altro / non specificato</option>
-            </select>
-          </fieldset>
-
-          <div class="actions">
-            <button type="submit" class="primary">Genera call</button>
-            <button type="button" id="resetBtn" class="secondary">Pulisci</button>
           </div>
-        </form>
-      </aside>
+        </fieldset>
 
-      <main class="results-panel">
-        <div id="postFilters" class="toolbar">
-          <div class="field">
-            <label for="live_topic_filter">Filtra i risultati per topic</label>
-            <select id="live_topic_filter">
-              <option value="">Tutti i topic</option>
-              <option value="climate">Climate</option>
-              <option value="energy">Energy</option>
-              <option value="hydrogen">Hydrogen</option>
-              <option value="batteries">Batteries</option>
-              <option value="mobility">Mobility</option>
-              <option value="transport">Transport</option>
-              <option value="renewables">Renewables</option>
-              <option value="storage">Storage</option>
-              <option value="smart-grids">Smart grids</option>
-              <option value="decarbonisation">Decarbonisation</option>
-              <option value="buildings">Buildings</option>
-              <option value="cities">Cities</option>
-              <option value="circularity">Circularity</option>
-              <option value="water">Water</option>
-            </select>
+        <fieldset>
+          <legend>2) Natura del progetto</legend>
+          <label>Tipologia ricerca</label>
+          <div class="radio-group">
+            <label class="radio-option"><input type="radio" name="project_nature" value="" checked> Qualsiasi</label>
+            <label class="radio-option"><input type="radio" name="project_nature" value="basic"> Basic</label>
+            <label class="radio-option"><input type="radio" name="project_nature" value="applied"> Applied</label>
+            <label class="radio-option"><input type="radio" name="project_nature" value="industrial"> Industrial</label>
           </div>
+        </fieldset>
 
-          <div class="field">
-            <label for="keyword_filter">Keyword libera</label>
-            <input id="keyword_filter" type="text" placeholder="Es. fuel cell, EV, solar, carbon..." />
-          </div>
+        <fieldset>
+          <legend>3) Cluster</legend>
+          <label for="thematic_cluster">Area tematica principale</label>
+          <select id="thematic_cluster" name="thematic_cluster" required>
+            <option value="" selected disabled>Seleziona…</option>
+            <option value="Health &amp; Life Sciences">Health &amp; Life Sciences</option>
+            <option value="Culture, Creativity &amp; Inclusion">Culture, Creativity &amp; Inclusion</option>
+            <option value="Security &amp; Resilience">Security &amp; Resilience</option>
+            <option value="Digital, Industry &amp; Space">Digital, Industry &amp; Space</option>
+            <option value="Climate, Energy &amp; Mobility">Climate, Energy &amp; Mobility</option>
+            <option value="Food, Bioeconomy &amp; Environment">Food, Bioeconomy &amp; Environment</option>
+            <option value="Defence">Defence</option>
+            <option value="SME, Entrepreneurship &amp; Market Uptake">SME, Entrepreneurship &amp; Market Uptake</option>
+            <option value="External Action &amp; International Cooperation">External Action &amp; International Cooperation</option>
+            <option value="Climate-neutral &amp; Smart Cities">Climate-neutral &amp; Smart Cities</option>
+            <option value="Healthy Oceans, Seas, Coastal &amp; Inland Waters">Healthy Oceans, Seas, Coastal &amp; Inland Waters</option>
+            <option value="Clean Aviation">Clean Aviation</option>
+            <option value="Cross-cutting / Other">Cross-cutting / Other</option>
+          </select>
+
+          <label for="official_cluster" style="margin-top:12px;">Cluster Horizon Europe ufficiale</label>
+          <p class="hint">
+            Se scegli un cluster ufficiale, il matching si restringe alle call Horizon Europe coerenti con quel cluster.
+          </p>
+          <select id="official_cluster" name="official_cluster">
+            <option value="">Qualsiasi / non applicabile</option>
+            <option value="1">Cluster 1: Health</option>
+            <option value="2">Cluster 2: Culture, Creativity and Inclusive Society</option>
+            <option value="3">Cluster 3: Civil Security for Society</option>
+            <option value="4">Cluster 4: Digital, Industry and Space</option>
+            <option value="5">Cluster 5: Climate, Energy and Mobility</option>
+            <option value="6">Cluster 6: Food, Bioeconomy, Natural Resources, Agriculture and Environment</option>
+          </select>
+        </fieldset>
+
+        <fieldset>
+          <legend>4) Tipo di azione</legend>
+          <label for="action_type">Action type</label>
+          <select id="action_type" name="action_type">
+            <option value="">Qualsiasi</option>
+            <option value="IA">Innovation Action (IA)</option>
+            <option value="RIA">Research and Innovation Action (RIA)</option>
+            <option value="CSA">Coordination and Support Action (CSA)</option>
+            <option value="COFUND">COFUND</option>
+            <option value="OTHER">Altro / non specificato</option>
+          </select>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit" class="primary">Genera call</button>
+          <button type="button" id="resetBtn" class="secondary">Pulisci</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="resultsSection" class="card results-card hidden">
+      <h2 class="section-title">Risultati</h2>
+      <p class="section-subtitle">
+        Qui sotto trovi le call generate. Da questo punto puoi anche filtrare i risultati per topic o keyword.
+      </p>
+
+      <div id="postFilters" class="toolbar hidden">
+        <div class="field">
+          <label for="live_topic_filter">Filtra i risultati per topic</label>
+          <select id="live_topic_filter">
+            <option value="">Tutti i topic</option>
+            <option value="climate">Climate</option>
+            <option value="energy">Energy</option>
+            <option value="hydrogen">Hydrogen</option>
+            <option value="batteries">Batteries</option>
+            <option value="mobility">Mobility</option>
+            <option value="transport">Transport</option>
+            <option value="renewables">Renewables</option>
+            <option value="storage">Storage</option>
+            <option value="smart-grids">Smart grids</option>
+            <option value="decarbonisation">Decarbonisation</option>
+            <option value="buildings">Buildings</option>
+            <option value="cities">Cities</option>
+            <option value="circularity">Circularity</option>
+            <option value="water">Water</option>
+          </select>
         </div>
 
-        <div id="results">
-          <div class="empty">
-            Compila il questionario e genera i risultati.
-          </div>
+        <div class="field">
+          <label for="keyword_filter">Keyword libera</label>
+          <input id="keyword_filter" type="text" placeholder="Es. fuel cell, EV, solar, carbon..." />
         </div>
-      </main>
-    </div>
+      </div>
+
+      <div id="results"></div>
+    </section>
   </div>
 
   <script>
     (async function () {
       const form = document.getElementById('surveyForm');
-      const resultsEl = document.getElementById('results');
       const resetBtn = document.getElementById('resetBtn');
       const lastUpdatedEl = document.getElementById('lastUpdated');
+
+      const resultsSection = document.getElementById('resultsSection');
+      const resultsEl = document.getElementById('results');
       const postFiltersEl = document.getElementById('postFilters');
       const liveTopicFilterEl = document.getElementById('live_topic_filter');
       const keywordFilterEl = document.getElementById('keyword_filter');
@@ -509,13 +533,13 @@
           'energy','energies','power system','power sector','electricity','grid','electrification'
         ],
         hydrogen: [
-          'hydrogen','h2','fuel cell','electrolyser','electrolyzer','electrolysis','renewable fuels'
+          'hydrogen','h2','fuel cell','electrolyser','electrolyzer','electrolysis','fuel cells'
         ],
         batteries: [
           'battery','batteries','cell','cells','accumulator','gigafactory','bms'
         ],
         mobility: [
-          'mobility','vehicle','vehicles','automotive','ev','electric vehicle','transport system'
+          'mobility','vehicle','vehicles','automotive','electric vehicle','transport system'
         ],
         transport: [
           'transport','transportation','road','rail','aviation','maritime','shipping','logistics'
@@ -547,13 +571,15 @@
       };
 
       function escapeHtml(value) {
-        return String(value || '').replace(/[&<>"']/g, (m) => ({
-          '&':'&amp;',
-          '<':'&lt;',
-          '>':'&gt;',
-          '"':'&quot;',
-          "'":'&#39;'
-        }[m]));
+        return String(value || '').replace(/[&<>"']/g, function (m) {
+          return {
+            '&':'&amp;',
+            '<':'&lt;',
+            '>':'&gt;',
+            '"':'&quot;',
+            "'":'&#39;'
+          }[m];
+        });
       }
 
       function normalizeAction(value) {
@@ -579,15 +605,16 @@
       function projectEndIso(year, quarter) {
         if (!year || !quarter) return '';
         return {
-          Q1: `${year}-03-31`,
-          Q2: `${year}-06-30`,
-          Q3: `${year}-09-30`,
-          Q4: `${year}-12-31`
+          Q1: year + '-03-31',
+          Q2: year + '-06-30',
+          Q3: year + '-09-30',
+          Q4: year + '-12-31'
         }[quarter] || '';
       }
 
       function parseLooseDate(value) {
         if (!value) return null;
+
         const direct = new Date(value);
         if (!isNaN(direct)) return direct;
 
@@ -618,10 +645,12 @@
       function getCumulationNote(programme) {
         if (!programme) return CUMULATION_NOTES.default;
         const p = String(programme).toLowerCase();
-        for (const [key, note] of Object.entries(CUMULATION_NOTES)) {
+
+        for (const key in CUMULATION_NOTES) {
           if (key === 'default') continue;
-          if (p.includes(key.toLowerCase())) return note;
+          if (p.includes(key.toLowerCase())) return CUMULATION_NOTES[key];
         }
+
         return CUMULATION_NOTES.default;
       }
 
@@ -637,28 +666,27 @@
           call.scope,
           call.destination,
           call.topic
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
+        ].filter(Boolean).join(' ').toLowerCase();
       }
 
       function inferTopics(call) {
         const text = buildSearchText(call);
         const topics = [];
 
-        for (const [topic, keywords] of Object.entries(TOPIC_RULES)) {
-          if (keywords.some(keyword => text.includes(keyword.toLowerCase()))) {
-            topics.push(topic);
-          }
+        for (const topic in TOPIC_RULES) {
+          const keywords = TOPIC_RULES[topic];
+          const found = keywords.some(function (keyword) {
+            return text.includes(keyword.toLowerCase());
+          });
+          if (found) topics.push(topic);
         }
 
         if (
           call.thematic_cluster &&
           String(call.thematic_cluster).toLowerCase().includes('climate, energy & mobility')
         ) {
-          ['climate', 'energy', 'mobility'].forEach(t => {
-            if (!topics.includes(t)) topics.push(t);
+          ['climate', 'energy', 'mobility'].forEach(function (topic) {
+            if (!topics.includes(topic)) topics.push(topic);
           });
         }
 
@@ -735,16 +763,20 @@
         let out = calls.map(enrichCall);
 
         if (wantedThematic) {
-          out = out.filter(call => call._thematic_norm === wantedThematic);
+          out = out.filter(function (call) {
+            return call._thematic_norm === wantedThematic;
+          });
         }
 
         if (wantedOfficial) {
           const resolvedWanted = resolveCluster(wantedOfficial);
-          out = out.filter(call => resolveCluster(call._official_norm) === resolvedWanted);
+          out = out.filter(function (call) {
+            return resolveCluster(call._official_norm) === resolvedWanted;
+          });
         }
 
         if (wantedAction) {
-          out = out.filter(call => {
+          out = out.filter(function (call) {
             if (!call._is_horizon) return true;
             if (wantedAction === 'OTHER') {
               return !call._action_norm || !['IA','RIA','CSA','COFUND'].includes(call._action_norm);
@@ -754,16 +786,20 @@
         }
 
         if (projectEnd) {
-          out = out.filter(call => call._deadline_norm && call._deadline_norm > projectEnd);
+          out = out.filter(function (call) {
+            return call._deadline_norm && call._deadline_norm > projectEnd;
+          });
         }
 
-        out.forEach(call => {
+        out.forEach(function (call) {
           call._score = scoreCall(call, answers);
         });
 
         return out
-          .filter(call => call._score >= 20)
-          .sort((a, b) => {
+          .filter(function (call) {
+            return call._score >= 20;
+          })
+          .sort(function (a, b) {
             if (b._score !== a._score) return b._score - a._score;
             return String(a._deadline_norm || '').localeCompare(String(b._deadline_norm || ''));
           })
@@ -774,7 +810,7 @@
         const topic = liveTopicFilterEl.value.trim();
         const keyword = keywordFilterEl.value.trim().toLowerCase();
 
-        return results.filter(call => {
+        return results.filter(function (call) {
           const okTopic = !topic || call._topics.includes(topic);
           const okKeyword = !keyword || call._searchText.includes(keyword);
           return okTopic && okKeyword;
@@ -783,84 +819,83 @@
 
       function renderSummary(answers) {
         const pills = [
-          `Chiusura: ${answers.closure_year} ${answers.closure_quarter}`,
-          `Natura: ${answers.project_nature || 'Qualsiasi'}`,
-          `Cluster: ${answers.thematic_cluster || '—'}`,
-          `Cluster HE: ${answers.official_cluster || 'Qualsiasi'}`,
-          `Action: ${answers.action_type || 'Qualsiasi'}`
+          'Chiusura: ' + answers.closure_year + ' ' + answers.closure_quarter,
+          'Natura: ' + (answers.project_nature || 'Qualsiasi'),
+          'Cluster: ' + (answers.thematic_cluster || '—'),
+          'Cluster HE: ' + (answers.official_cluster || 'Qualsiasi'),
+          'Action: ' + (answers.action_type || 'Qualsiasi')
         ];
 
-        return `
-          <div class="summary">
-            ${pills.map(item => `<span class="pill">${escapeHtml(item)}</span>`).join('')}
-          </div>
-        `;
+        return (
+          '<div class="summary">' +
+          pills.map(function (item) {
+            return '<span class="pill">' + escapeHtml(item) + '</span>';
+          }).join('') +
+          '</div>'
+        );
       }
 
       function renderCalls(filtered, answers) {
-        if (!CALLS.length) {
-          resultsEl.innerHTML = `<div class="error">Non riesco a caricare <code>calls.json</code>.</div>`;
-          postFiltersEl.classList.remove('visible');
-          return;
-        }
-
         const liveFiltered = applyLiveFilters(filtered);
 
         let html = '';
         html += renderSummary(answers);
-        html += `<div class="meta-box">Ora puoi filtrare le call già generate usando il filtro per topic o una keyword libera.</div>`;
-        html += `<div class="stats">Call trovate: ${liveFiltered.length} <span class="muted">su ${filtered.length} risultati generati</span></div>`;
+        html += '<div class="meta-box">Puoi ora affinare i risultati con un filtro per topic oppure con una keyword libera.</div>';
+        html += '<div class="stats">Call trovate: ' + liveFiltered.length + ' <span class="muted">su ' + filtered.length + ' risultati generati</span></div>';
 
         if (!liveFiltered.length) {
-          html += `<div class="empty">Nessuna call corrisponde ai filtri attivi.</div>`;
+          html += '<div class="empty">Nessuna call corrisponde ai filtri attivi.</div>';
           resultsEl.innerHTML = html;
-          postFiltersEl.classList.add('visible');
           return;
         }
 
-        for (const call of liveFiltered) {
+        liveFiltered.forEach(function (call) {
           const meta = [
-            call.programme ? `Programme: ${call.programme}` : '',
-            call.thematic_cluster ? `Thematic area: ${call.thematic_cluster}` : '',
-            call.cluster_label ? `Horizon area: ${call.cluster_label}` : '',
-            call.action ? `Action: ${call.action}` : '',
-            call.opening ? `Opening: ${call.opening}` : '',
-            call.deadline ? `Deadline: ${call.deadline}` : '',
-            call.budget ? `Budget: ${call.budget}` : ''
+            call.programme ? 'Programme: ' + call.programme : '',
+            call.thematic_cluster ? 'Thematic area: ' + call.thematic_cluster : '',
+            call.cluster_label ? 'Horizon area: ' + call.cluster_label : '',
+            call.action ? 'Action: ' + call.action : '',
+            call.opening ? 'Opening: ' + call.opening : '',
+            call.deadline ? 'Deadline: ' + call.deadline : '',
+            call.budget ? 'Budget: ' + call.budget : ''
           ].filter(Boolean).join(' · ');
 
           const missionBadge = call.is_mission
-            ? `<span class="badge mission">Mission</span>`
+            ? '<span class="badge mission">Mission</span>'
             : '';
 
           const topicsHtml = call._topics.length
-            ? `<div class="topic-tags">${call._topics.map(t => `<span class="topic-tag">${escapeHtml(t)}</span>`).join('')}</div>`
+            ? '<div class="topic-tags">' + call._topics.map(function (topic) {
+                return '<span class="topic-tag">' + escapeHtml(topic) + '</span>';
+              }).join('') + '</div>'
             : '';
 
           const cumulationHtml = call._is_horizon
             ? ''
-            : `<div class="cumulation-note"><strong>Cumulation con Horizon Europe:</strong> ${escapeHtml(getCumulationNote(call.programme))}</div>`;
+            : '<div class="cumulation-note"><strong>Cumulation con Horizon Europe:</strong> ' + escapeHtml(getCumulationNote(call.programme)) + '</div>';
 
-          html += `
-            <article class="call ${call.is_mission ? 'mission' : ''}">
-              <h3>${escapeHtml(call.name || '(senza nome)')} ${missionBadge}</h3>
-              <div class="meta">${escapeHtml(meta)}</div>
-              ${topicsHtml}
-              ${cumulationHtml}
-              ${call.url ? `<div class="meta">Link: <a href="${encodeURI(call.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(call.url)}</a></div>` : ''}
-            </article>
-          `;
-        }
+          const urlHtml = call.url
+            ? '<div class="meta">Link: <a href="' + encodeURI(call.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(call.url) + '</a></div>'
+            : '';
+
+          html +=
+            '<article class="call ' + (call.is_mission ? 'mission' : '') + '">' +
+              '<h3>' + escapeHtml(call.name || '(senza nome)') + ' ' + missionBadge + '</h3>' +
+              '<div class="meta">' + escapeHtml(meta) + '</div>' +
+              topicsHtml +
+              cumulationHtml +
+              urlHtml +
+            '</article>';
+        });
 
         resultsEl.innerHTML = html;
-        postFiltersEl.classList.add('visible');
       }
 
       async function loadCalls() {
         if (Array.isArray(window.CALLS_DATA)) return window.CALLS_DATA;
 
         try {
-          const response = await fetch('./calls.json', { cache: 'no-store' });
+          const response = await fetch('./calls.json', { cache:'no-store' });
           const data = await response.json();
 
           if (data.generated) {
@@ -870,8 +905,8 @@
               ' ' +
               d.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
 
-            lastUpdatedEl.textContent = `Dati aggiornati al: ${stamp} UTC`;
-            lastUpdatedEl.style.display = 'block';
+            lastUpdatedEl.textContent = 'Dati aggiornati al: ' + stamp + ' UTC';
+            lastUpdatedEl.classList.remove('hidden');
           }
 
           return Array.isArray(data.calls) ? data.calls : [];
@@ -893,6 +928,17 @@
         };
       }
 
+      function showResultsArea() {
+        resultsSection.classList.remove('hidden');
+        postFiltersEl.classList.remove('hidden');
+      }
+
+      function hideResultsArea() {
+        resultsSection.classList.add('hidden');
+        postFiltersEl.classList.add('hidden');
+        resultsEl.innerHTML = '';
+      }
+
       function regenerateLiveFilters() {
         if (!lastAnswers) return;
         renderCalls(lastGeneratedResults, lastAnswers);
@@ -901,13 +947,22 @@
       form.addEventListener('submit', function (event) {
         event.preventDefault();
 
+        if (!CALLS.length) {
+          showResultsArea();
+          resultsEl.innerHTML = '<div class="error">Non riesco a caricare <code>calls.json</code>.</div>';
+          resultsSection.scrollIntoView({ behavior:'smooth', block:'start' });
+          return;
+        }
+
         lastAnswers = getAnswers();
         lastGeneratedResults = applyBaseFilters(CALLS, lastAnswers);
 
         liveTopicFilterEl.value = '';
         keywordFilterEl.value = '';
 
+        showResultsArea();
         renderCalls(lastGeneratedResults, lastAnswers);
+        resultsSection.scrollIntoView({ behavior:'smooth', block:'start' });
       });
 
       liveTopicFilterEl.addEventListener('change', regenerateLiveFilters);
@@ -919,8 +974,7 @@
         keywordFilterEl.value = '';
         lastGeneratedResults = [];
         lastAnswers = null;
-        postFiltersEl.classList.remove('visible');
-        resultsEl.innerHTML = `<div class="empty">Compila il questionario e genera i risultati.</div>`;
+        hideResultsArea();
       });
 
       CALLS = await loadCalls();
