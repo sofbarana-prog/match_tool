@@ -173,11 +173,6 @@
       </div>
     </form>
 
-    <div id="searchBar" class="search-bar">
-      <input type="text" id="searchInput" placeholder="Filter results by keyword… e.g. hydrogen, batteries, AI" autocomplete="off" />
-      <span class="count" id="searchCount"></span>
-      <button type="button" id="clearSearch" class="secondary" style="padding:8px 12px;font-size:.9rem">✕ Clear</button>
-    </div>
     <section id="results" class="results" aria-live="polite"></section>
 
     <footer>
@@ -421,12 +416,23 @@
       </div>`;
     });
 
-    results.innerHTML = html;
-    // Show keyword filter bar
-    const sb = document.getElementById('searchBar');
-    sb.classList.add('active');
-    document.getElementById('searchInput').value = '';
-    document.getElementById('searchCount').textContent = `${filtered.length} calls`;
+    // Prepend inline search bar to results
+    const searchBarHtml = `
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+        <input type="text" id="searchInput"
+          placeholder="Filter by keyword… e.g. hydrogen, batteries, AI"
+          autocomplete="off"
+          style="flex:1;min-width:200px;padding:9px 14px;border:1px solid #cfcfcf;
+                 border-radius:10px;font-size:.97rem;outline:none"
+          oninput="applySearch()"
+        />
+        <span id="searchCount" style="color:#6b7280;font-size:.9rem;white-space:nowrap">${filtered.length} calls</span>
+        <button type="button" onclick="document.getElementById('searchInput').value='';applySearch()"
+          style="padding:8px 12px;border-radius:10px;border:0;background:#6b7280;color:white;font-weight:700;cursor:pointer;font-size:.9rem">
+          ✕ Clear
+        </button>
+      </div>`;
+    results.innerHTML = searchBarHtml + html;
     results.scrollIntoView({ behavior: 'smooth' });
   }
 
@@ -450,7 +456,7 @@
   });
 
   // ── Keyword filter ────────────────────────────────────────────────────────
-  function applySearch() {
+  window.applySearch = function applySearch() {
     const raw   = document.getElementById('searchInput').value.trim();
     const terms = raw.toLowerCase().split(/\s+/).filter(Boolean);
     const cards = document.querySelectorAll('#results .call');
@@ -485,12 +491,7 @@
       terms.length ? `${visible} of ${total} calls match` : `${total} calls`;
   }
 
-  document.getElementById('searchInput').addEventListener('input', applySearch);
 
-  document.getElementById('clearSearch').addEventListener('click', function() {
-    document.getElementById('searchInput').value = '';
-    applySearch();
-  });
 })();
 </script>
 </body>
