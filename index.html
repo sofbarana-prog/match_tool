@@ -20,13 +20,11 @@
       --shadow:0 10px 30px rgba(15,23,42,.06);
       --radius-xl:28px;
       --radius-lg:20px;
-      --radius-md:14px;
       --radius-pill:999px;
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     }
 
     *{ box-sizing:border-box; }
-
     html{ scroll-behavior:smooth; }
 
     body{
@@ -41,9 +39,7 @@
       padding:32px 20px 72px;
     }
 
-    .hero{
-      margin-bottom:24px;
-    }
+    .hero{ margin-bottom:24px; }
 
     .hero h1{
       margin:0 0 10px;
@@ -56,7 +52,6 @@
       max-width:860px;
       color:var(--muted);
       line-height:1.6;
-      font-size:1rem;
     }
 
     .card{
@@ -66,14 +61,8 @@
       box-shadow:var(--shadow);
     }
 
-    .form-card{
-      padding:24px;
-    }
-
-    .results-card{
-      margin-top:28px;
-      padding:24px;
-    }
+    .form-card{ padding:24px; }
+    .results-card{ margin-top:28px; padding:24px; }
 
     fieldset{
       margin:0 0 18px;
@@ -328,18 +317,14 @@
       border-color:#fecaca;
     }
 
-    .muted{
-      color:var(--muted);
-    }
+    .muted{ color:var(--muted); }
 
     a{
       color:var(--primary);
       word-break:break-word;
     }
 
-    .hidden{
-      display:none;
-    }
+    .hidden{ display:none; }
 
     .results-footer{
       display:flex;
@@ -355,18 +340,9 @@
     }
 
     @media (max-width: 760px){
-      .grid-2{
-        grid-template-columns:1fr;
-      }
-
-      .page{
-        padding:20px 14px 48px;
-      }
-
-      .form-card,
-      .results-card{
-        padding:18px;
-      }
+      .grid-2{ grid-template-columns:1fr; }
+      .page{ padding:20px 14px 48px; }
+      .form-card, .results-card{ padding:18px; }
     }
   </style>
 </head>
@@ -481,34 +457,20 @@
     <section id="resultsSection" class="card results-card hidden">
       <h2 class="section-title">Risultati</h2>
       <p class="section-subtitle">
-        Qui sotto trovi le call generate. Puoi anche filtrare i risultati per topic o keyword e caricarne altri progressivamente.
+        Qui sotto trovi le call generate. I filtri tematici cambiano automaticamente in base all’area scelta nel questionario.
       </p>
 
       <div id="postFilters" class="toolbar hidden">
         <div class="field">
-          <label for="live_topic_filter">Filtra i risultati per topic</label>
+          <label for="live_topic_filter">Filtro sottotematico</label>
           <select id="live_topic_filter">
-            <option value="">Tutti i topic</option>
-            <option value="climate">Climate</option>
-            <option value="energy">Energy</option>
-            <option value="hydrogen">Hydrogen</option>
-            <option value="batteries">Batteries</option>
-            <option value="mobility">Mobility</option>
-            <option value="transport">Transport</option>
-            <option value="renewables">Renewables</option>
-            <option value="storage">Storage</option>
-            <option value="smart-grids">Smart grids</option>
-            <option value="decarbonisation">Decarbonisation</option>
-            <option value="buildings">Buildings</option>
-            <option value="cities">Cities</option>
-            <option value="circularity">Circularity</option>
-            <option value="water">Water</option>
+            <option value="">Tutti i sottotemi</option>
           </select>
         </div>
 
         <div class="field">
           <label for="keyword_filter">Keyword libera</label>
-          <input id="keyword_filter" type="text" placeholder="Es. fuel cell, EV, solar, carbon..." />
+          <input id="keyword_filter" type="text" placeholder="Es. hydrogen, robotics, cancer, soil, cyber..." />
         </div>
       </div>
 
@@ -553,50 +515,169 @@
         "default": "La coesistenza con Horizon Europe è possibile se non c’è sovrapposizione delle stesse voci di costo. Il cumulo non può superare i costi eleggibili totali."
       };
 
-      const TOPIC_RULES = {
-        climate: [
-          'climate','climatic','adaptation','mitigation','net zero','carbon','co2','ghg',
-          'emission','decarbon','climate-neutral','climate neutral'
-        ],
-        energy: [
-          'energy','energies','power system','power sector','electricity','grid','electrification'
-        ],
-        hydrogen: [
-          'hydrogen','h2','fuel cell','electrolyser','electrolyzer','electrolysis','fuel cells'
-        ],
-        batteries: [
-          'battery','batteries','cell','cells','accumulator','gigafactory','bms'
-        ],
-        mobility: [
-          'mobility','vehicle','vehicles','automotive','electric vehicle','transport system'
-        ],
-        transport: [
-          'transport','transportation','road','rail','aviation','maritime','shipping','logistics'
-        ],
-        renewables: [
-          'renewable','renewables','solar','photovoltaic','pv','wind','biofuel','biomethane','geothermal','hydropower'
-        ],
-        storage: [
-          'storage','energy storage','thermal storage','long-duration storage','long duration storage'
-        ],
-        'smart-grids': [
-          'smart grid','smart grids','grid flexibility','demand response','grid digitalisation','grid digitalization'
-        ],
-        decarbonisation: [
-          'decarbonisation','decarbonization','low-carbon','low carbon','zero-emission','zero emission'
-        ],
-        buildings: [
-          'building','buildings','construction','retrofit','renovation','built environment'
-        ],
-        cities: [
-          'city','cities','urban','smart city','smart cities'
-        ],
-        circularity: [
-          'circular','recycling','reuse','remanufacturing','resource efficiency','second life'
-        ],
-        water: [
-          'water','wastewater','marine','ocean','sea','coastal','inland waters','aquatic'
-        ]
+      const TOPIC_CATALOG = {
+        "Health & Life Sciences": {
+          label: "Health & Life Sciences",
+          topics: {
+            cancer: ['cancer','oncology','tumor','tumour','metastatic'],
+            biotech: ['biotech','biotechnology','biological','biomanufacturing','bioprocess'],
+            pharma: ['pharma','pharmaceutical','drug','therapeutic','therapy','medicinal'],
+            medtech: ['medical device','medical devices','diagnostic device','implant','wearable medical'],
+            diagnostics: ['diagnostic','diagnostics','screening','biomarker','assay'],
+            digital_health: ['digital health','telemedicine','remote monitoring','ehealth','health data'],
+            genomics: ['genomic','genomics','gene','genetic','dna','rna','sequencing'],
+            neuroscience: ['brain','neuro','neuroscience','alzheimer','parkinson','cognitive'],
+            public_health: ['public health','healthcare system','prevention','epidemiology','population health']
+          }
+        },
+
+        "Culture, Creativity & Inclusion": {
+          label: "Culture, Creativity & Inclusion",
+          topics: {
+            heritage: ['heritage','cultural heritage','museum','archive','archaeology'],
+            creative_industries: ['creative industry','creative industries','design','media','audiovisual'],
+            inclusion: ['inclusion','social inclusion','inequality','participation','accessibility'],
+            democracy: ['democracy','civic','governance','citizen engagement','institution'],
+            education_society: ['education','skills','lifelong learning','social innovation'],
+            migration: ['migration','migrant','refugee','integration','diaspora']
+          }
+        },
+
+        "Security & Resilience": {
+          label: "Security & Resilience",
+          topics: {
+            cybersecurity: ['cybersecurity','cyber security','cyberattack','ransomware','security operations'],
+            disaster_resilience: ['disaster','resilience','emergency','crisis response','preparedness'],
+            border_security: ['border','customs','surveillance','cross-border control'],
+            civil_protection: ['civil protection','first responder','public safety','rescue'],
+            critical_infrastructure: ['critical infrastructure','infrastructure protection','risk assessment'],
+            defence_dual_use: ['dual-use','dual use','situational awareness','threat detection']
+          }
+        },
+
+        "Digital, Industry & Space": {
+          label: "Digital, Industry & Space",
+          topics: {
+            ai: ['artificial intelligence','machine learning','ai ','generative ai','foundation model'],
+            robotics: ['robot','robotics','cobot','autonomous system'],
+            semiconductors: ['semiconductor','chip','microelectronics','photonics','integrated circuit'],
+            quantum: ['quantum','qubit','quantum computing','quantum communication'],
+            data_cloud: ['cloud','edge','data space','data sharing','interoperability'],
+            manufacturing: ['manufacturing','factory','industry 4.0','industrial process','advanced manufacturing'],
+            materials: ['advanced material','materials','composite','alloy','nanomaterial'],
+            space: ['space','satellite','launcher','earth observation','copernicus','galileo']
+          }
+        },
+
+        "Climate, Energy & Mobility": {
+          label: "Climate, Energy & Mobility",
+          topics: {
+            climate: ['climate','climatic','adaptation','mitigation','net zero','carbon','co2','ghg','emission'],
+            energy: ['energy','energies','electricity','power system','grid','electrification'],
+            hydrogen: ['hydrogen','h2','fuel cell','electrolyser','electrolysis'],
+            batteries: ['battery','batteries','cell','bms','accumulator'],
+            mobility: ['mobility','vehicle','vehicles','automotive','ev','electric vehicle'],
+            transport: ['transport','rail','aviation','shipping','maritime','logistics'],
+            renewables: ['renewable','solar','pv','photovoltaic','wind','geothermal','hydropower','biofuel'],
+            storage: ['storage','energy storage','thermal storage','long-duration storage'],
+            smart_grids: ['smart grid','smart grids','demand response','grid flexibility'],
+            buildings: ['building','buildings','retrofit','renovation','built environment'],
+            cities: ['city','cities','urban','smart city','smart cities'],
+            circularity: ['circular','recycling','reuse','remanufacturing'],
+            water: ['water','wastewater','aquatic','coastal','marine']
+          }
+        },
+
+        "Food, Bioeconomy & Environment": {
+          label: "Food, Bioeconomy & Environment",
+          topics: {
+            agriculture: ['agriculture','farming','crop','precision farming','agronomy'],
+            food_systems: ['food system','food systems','food processing','nutrition','food supply'],
+            bioeconomy: ['bioeconomy','biobased','bio-based','biomass','biorefinery'],
+            biodiversity: ['biodiversity','ecosystem','habitat','species restoration'],
+            forestry: ['forest','forestry','wood','silviculture'],
+            soil: ['soil','regenerative soil','land restoration','soil health'],
+            environment: ['environment','pollution','air quality','contaminant'],
+            water_resources: ['water resource','river basin','groundwater','freshwater']
+          }
+        },
+
+        "Defence": {
+          label: "Defence",
+          topics: {
+            defence_systems: ['defence system','military system','battlefield','mission system'],
+            autonomy: ['autonomous','unmanned','uas','uav','drone'],
+            sensing: ['radar','sonar','sensor fusion','detection'],
+            secure_comm: ['secure communication','encrypted communication','tactical network'],
+            materials_protection: ['ballistic','armour','protective materials','survivability']
+          }
+        },
+
+        "SME, Entrepreneurship & Market Uptake": {
+          label: "SME, Entrepreneurship & Market Uptake",
+          topics: {
+            startup: ['startup','spin-off','venture','new business'],
+            scaleup: ['scale-up','scaleup','growth company','go-to-market'],
+            innovation_uptake: ['market uptake','commercialisation','commercialization','deployment'],
+            entrepreneurship: ['entrepreneurship','entrepreneur','business model'],
+            sme_support: ['sme','small business','innovation support','acceleration']
+          }
+        },
+
+        "External Action & International Cooperation": {
+          label: "External Action & International Cooperation",
+          topics: {
+            development: ['development cooperation','development','capacity building'],
+            global_health: ['global health','health systems strengthening'],
+            governance: ['governance','institutional reform','public administration'],
+            humanitarian: ['humanitarian','humanitarian aid','relief'],
+            international_partnerships: ['international cooperation','partnership','bilateral','multilateral']
+          }
+        },
+
+        "Climate-neutral & Smart Cities": {
+          label: "Climate-neutral & Smart Cities",
+          topics: {
+            smart_cities: ['smart city','smart cities','urban innovation'],
+            urban_mobility: ['urban mobility','public transport','shared mobility'],
+            urban_energy: ['district energy','urban energy','local energy system'],
+            buildings: ['building','buildings','renovation','energy efficient building'],
+            climate_neutrality: ['climate-neutral','climate neutral','net zero city','urban decarbonisation']
+          }
+        },
+
+        "Healthy Oceans, Seas, Coastal & Inland Waters": {
+          label: "Healthy Oceans, Seas, Coastal & Inland Waters",
+          topics: {
+            marine: ['marine','ocean','sea','maritime ecosystem'],
+            coastal: ['coastal','shoreline','coast'],
+            inland_waters: ['lake','river','inland waters','freshwater'],
+            blue_economy: ['blue economy','fisheries','aquaculture','marine biotechnology'],
+            pollution_water: ['water pollution','marine litter','microplastic','wastewater']
+          }
+        },
+
+        "Clean Aviation": {
+          label: "Clean Aviation",
+          topics: {
+            aircraft: ['aircraft','airframe','aerostructure'],
+            propulsion: ['propulsion','engine','hybrid-electric propulsion','electric propulsion'],
+            sustainable_fuels: ['sustainable aviation fuel','saf','aviation fuel'],
+            emissions: ['aviation emissions','low-emission aviation','zero-emission aircraft'],
+            airport_ops: ['airport','ground operation','air traffic']
+          }
+        },
+
+        "Cross-cutting / Other": {
+          label: "Cross-cutting / Other",
+          topics: {
+            interdisciplinary: ['interdisciplinary','cross-sector','cross-cutting'],
+            policy: ['policy','regulation','standardisation','standardization'],
+            skills: ['skills','training','upskilling','reskilling'],
+            digital_transition: ['digital transition','digital transformation'],
+            green_transition: ['green transition','sustainability transition']
+          }
+        }
       };
 
       function escapeHtml(value) {
@@ -609,6 +690,12 @@
             "'":'&#39;'
           }[m];
         });
+      }
+
+      function prettyTopicLabel(key) {
+        return String(key || '')
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
       }
 
       function normalizeAction(value) {
@@ -698,33 +785,37 @@
         ].filter(Boolean).join(' ').toLowerCase();
       }
 
+      function getTopicMapForCluster(clusterName) {
+        const entry = TOPIC_CATALOG[clusterName];
+        return entry ? entry.topics : {};
+      }
+
       function inferTopics(call) {
         const text = buildSearchText(call);
         const topics = [];
+        const clusterName = String(call.thematic_cluster || '').trim();
 
-        for (const topic in TOPIC_RULES) {
-          const keywords = TOPIC_RULES[topic];
+        const exactTopicMap = getTopicMapForCluster(clusterName);
+
+        for (const topicKey in exactTopicMap) {
+          const keywords = exactTopicMap[topicKey];
           const found = keywords.some(function (keyword) {
             return text.includes(keyword.toLowerCase());
           });
-          if (found) topics.push(topic);
+          if (found) topics.push(topicKey);
         }
 
-        if (
-          call.thematic_cluster &&
-          String(call.thematic_cluster).toLowerCase().includes('climate, energy & mobility')
-        ) {
-          ['climate', 'energy', 'mobility'].forEach(function (topic) {
-            if (!topics.includes(topic)) topics.push(topic);
-          });
-        }
-
-        if (
-          call.thematic_cluster &&
-          String(call.thematic_cluster).toLowerCase().includes('climate-neutral')
-        ) {
-          if (!topics.includes('cities')) topics.push('cities');
-          if (!topics.includes('climate')) topics.push('climate');
+        if (!topics.length) {
+          for (const clusterKey in TOPIC_CATALOG) {
+            const genericMap = TOPIC_CATALOG[clusterKey].topics;
+            for (const topicKey in genericMap) {
+              const keywords = genericMap[topicKey];
+              const found = keywords.some(function (keyword) {
+                return text.includes(keyword.toLowerCase());
+              });
+              if (found && !topics.includes(topicKey)) topics.push(topicKey);
+            }
+          }
         }
 
         return topics;
@@ -834,6 +925,33 @@
           });
       }
 
+      function populateDynamicTopicFilter(clusterName, results) {
+        const topicMap = getTopicMapForCluster(clusterName);
+        const availableTopics = new Set();
+
+        results.forEach(function (call) {
+          (call._topics || []).forEach(function (topic) {
+            if (topicMap[topic]) availableTopics.add(topic);
+          });
+        });
+
+        let options = '<option value="">Tutti i sottotemi</option>';
+
+        Object.keys(topicMap).forEach(function (topicKey) {
+          if (availableTopics.has(topicKey)) {
+            options += '<option value="' + escapeHtml(topicKey) + '">' + escapeHtml(prettyTopicLabel(topicKey)) + '</option>';
+          }
+        });
+
+        if (options === '<option value="">Tutti i sottotemi</option>') {
+          Object.keys(topicMap).forEach(function (topicKey) {
+            options += '<option value="' + escapeHtml(topicKey) + '">' + escapeHtml(prettyTopicLabel(topicKey)) + '</option>';
+          });
+        }
+
+        liveTopicFilterEl.innerHTML = options;
+      }
+
       function applyLiveFilters(results) {
         const topic = liveTopicFilterEl.value.trim();
         const keyword = keywordFilterEl.value.trim().toLowerCase();
@@ -869,7 +987,7 @@
 
         let html = '';
         html += renderSummary(answers);
-        html += '<div class="meta-box">Puoi ora affinare i risultati con un filtro per topic oppure con una keyword libera.</div>';
+        html += '<div class="meta-box">I sottotemi del menu sono adattati automaticamente all’area tematica selezionata nel questionario.</div>';
         html += '<div class="stats">Call trovate: ' + liveFiltered.length + ' <span class="muted">totali dopo i filtri</span></div>';
 
         if (!liveFiltered.length) {
@@ -896,7 +1014,7 @@
 
           const topicsHtml = call._topics.length
             ? '<div class="topic-tags">' + call._topics.map(function (topic) {
-                return '<span class="topic-tag">' + escapeHtml(topic) + '</span>';
+                return '<span class="topic-tag">' + escapeHtml(prettyTopicLabel(topic)) + '</span>';
               }).join('') + '</div>'
             : '';
 
@@ -1011,6 +1129,7 @@
         lastGeneratedResults = applyBaseFilters(CALLS, lastAnswers);
         visibleCount = PAGE_SIZE;
 
+        populateDynamicTopicFilter(lastAnswers.thematic_cluster, lastGeneratedResults);
         liveTopicFilterEl.value = '';
         keywordFilterEl.value = '';
 
@@ -1034,7 +1153,7 @@
 
       resetBtn.addEventListener('click', function () {
         form.reset();
-        liveTopicFilterEl.value = '';
+        liveTopicFilterEl.innerHTML = '<option value="">Tutti i sottotemi</option>';
         keywordFilterEl.value = '';
         lastGeneratedResults = [];
         lastAnswers = null;
