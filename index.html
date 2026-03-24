@@ -24,8 +24,8 @@
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     }
 
-    * { box-sizing:border-box; }
-    html { scroll-behavior:smooth; }
+    *{ box-sizing:border-box; }
+    html{ scroll-behavior:smooth; }
 
     body{
       margin:0;
@@ -49,7 +49,7 @@
 
     .hero p{
       margin:0;
-      max-width:900px;
+      max-width:860px;
       color:var(--muted);
       line-height:1.6;
     }
@@ -273,11 +273,6 @@
       color:#fff;
     }
 
-    .badge.override{
-      background:#111827;
-      color:#fff;
-    }
-
     .topic-tags{
       margin-top:10px;
       display:flex;
@@ -323,12 +318,13 @@
     }
 
     .muted{ color:var(--muted); }
-    .hidden{ display:none; }
 
     a{
       color:var(--primary);
       word-break:break-word;
     }
+
+    .hidden{ display:none; }
 
     .results-footer{
       display:flex;
@@ -347,7 +343,6 @@
       .grid-2{ grid-template-columns:1fr; }
       .page{ padding:20px 14px 48px; }
       .form-card, .results-card{ padding:18px; }
-      .toolbar{ flex-direction:column; align-items:stretch; }
     }
   </style>
 </head>
@@ -357,7 +352,7 @@
       <h1>Funding Call Matcher</h1>
       <p>
         Compila il questionario per generare le call più coerenti con il progetto.
-        Dopo il click su “Genera call”, compariranno sotto al form i risultati, il dropdown dei sottotemi e la ricerca full-text.
+        I risultati e i filtri avanzati compariranno solo dopo la generazione, più in basso nella pagina.
       </p>
     </header>
 
@@ -379,6 +374,7 @@
                 <option value="2030">2030</option>
               </select>
             </div>
+
             <div>
               <label for="closure_quarter">Quarter</label>
               <select id="closure_quarter" name="closure_quarter" required>
@@ -420,7 +416,6 @@
             <option value="Climate-neutral &amp; Smart Cities">Climate-neutral &amp; Smart Cities</option>
             <option value="Healthy Oceans, Seas, Coastal &amp; Inland Waters">Healthy Oceans, Seas, Coastal &amp; Inland Waters</option>
             <option value="Clean Aviation">Clean Aviation</option>
-            <option value="Research, Academia">Research, Academia</option>
             <option value="Cross-cutting / Other">Cross-cutting / Other</option>
           </select>
 
@@ -462,7 +457,7 @@
     <section id="resultsSection" class="card results-card hidden">
       <h2 class="section-title">Risultati</h2>
       <p class="section-subtitle">
-        Dopo la generazione, qui compare il dropdown dei sottotemi con tutte le opzioni disponibili nei risultati trovati.
+        Qui sotto trovi le call generate. I filtri tematici cambiano automaticamente in base all’area scelta nel questionario.
       </p>
 
       <div id="postFilters" class="toolbar hidden">
@@ -474,8 +469,8 @@
         </div>
 
         <div class="field">
-          <label for="keyword_filter">Ricerca full-text</label>
-          <input id="keyword_filter" type="text" placeholder="Es. cybersecurity, hydrogen, cancer, smart city..." />
+          <label for="keyword_filter">Keyword libera</label>
+          <input id="keyword_filter" type="text" placeholder="Es. hydrogen, robotics, cancer, soil, cyber..." />
         </div>
       </div>
 
@@ -495,8 +490,8 @@
       const lastUpdatedEl = document.getElementById('lastUpdated');
 
       const resultsSection = document.getElementById('resultsSection');
-      const postFiltersEl = document.getElementById('postFilters');
       const resultsEl = document.getElementById('results');
+      const postFiltersEl = document.getElementById('postFilters');
       const liveTopicFilterEl = document.getElementById('live_topic_filter');
       const keywordFilterEl = document.getElementById('keyword_filter');
       const resultsFooterEl = document.getElementById('resultsFooter');
@@ -504,21 +499,185 @@
       const loadMoreBtn = document.getElementById('loadMoreBtn');
 
       let CALLS = [];
-      let lastAnswers = null;
       let lastGeneratedResults = [];
+      let lastAnswers = null;
       let visibleCount = 20;
       const PAGE_SIZE = 20;
 
-      const TOPIC_FALLBACKS = {
-        "Health & Life Sciences": ["health","cancer","biotech","pharma","medtech","diagnostics","digital_health","genomics","neuroscience","public_health"],
-        "Culture, Creativity & Inclusion": ["heritage","creative_industries","inclusion","democracy","education_society","migration"],
-        "Security & Resilience": ["cybersecurity","disaster_resilience","border_security","civil_protection","critical_infrastructure","urban_security"],
-        "Digital, Industry & Space": ["digital","ai","robotics","semiconductors","quantum","data_cloud","manufacturing","materials","space"],
-        "Climate, Energy & Mobility": ["climate","energy","hydrogen","batteries","mobility","transport","renewables","storage","smart_grids","buildings","cities","circularity","water"],
-        "Food, Bioeconomy & Environment": ["agriculture","food_systems","bioeconomy","biodiversity","forestry","soil","environment","water_resources"],
-        "SME, Entrepreneurship & Market Uptake": ["sme","startup","scaleup","market_uptake","entrepreneurship"],
-        "Climate-neutral & Smart Cities": ["cities","smart_cities","urban_mobility","urban_energy","buildings","climate_neutrality"],
-        "Research, Academia": ["research_infrastructures","open_science","academia"]
+      const MISSION_TO_CLUSTER = {
+        CANCER: '1',
+        CLIMA: '5',
+        SOIL: '6'
+      };
+
+      const CUMULATION_NOTES = {
+        "European Defence Fund": "Quadro separato. La cumulation con programmi civili è possibile solo nei limiti applicabili e senza doppio finanziamento delle stesse voci di costo.",
+        "default": "La coesistenza con Horizon Europe è possibile se non c’è sovrapposizione delle stesse voci di costo. Il cumulo non può superare i costi eleggibili totali."
+      };
+
+      const TOPIC_CATALOG = {
+        "Health & Life Sciences": {
+          label: "Health & Life Sciences",
+          topics: {
+            cancer: ['cancer','oncology','tumor','tumour','metastatic'],
+            biotech: ['biotech','biotechnology','biological','biomanufacturing','bioprocess'],
+            pharma: ['pharma','pharmaceutical','drug','therapeutic','therapy','medicinal'],
+            medtech: ['medical device','medical devices','diagnostic device','implant','wearable medical'],
+            diagnostics: ['diagnostic','diagnostics','screening','biomarker','assay'],
+            digital_health: ['digital health','telemedicine','remote monitoring','ehealth','health data'],
+            genomics: ['genomic','genomics','gene','genetic','dna','rna','sequencing'],
+            neuroscience: ['brain','neuro','neuroscience','alzheimer','parkinson','cognitive'],
+            public_health: ['public health','healthcare system','prevention','epidemiology','population health']
+          }
+        },
+
+        "Culture, Creativity & Inclusion": {
+          label: "Culture, Creativity & Inclusion",
+          topics: {
+            heritage: ['heritage','cultural heritage','museum','archive','archaeology'],
+            creative_industries: ['creative industry','creative industries','design','media','audiovisual'],
+            inclusion: ['inclusion','social inclusion','inequality','participation','accessibility'],
+            democracy: ['democracy','civic','governance','citizen engagement','institution'],
+            education_society: ['education','skills','lifelong learning','social innovation'],
+            migration: ['migration','migrant','refugee','integration','diaspora']
+          }
+        },
+
+        "Security & Resilience": {
+          label: "Security & Resilience",
+          topics: {
+            cybersecurity: ['cybersecurity','cyber security','cyberattack','ransomware','security operations'],
+            disaster_resilience: ['disaster','resilience','emergency','crisis response','preparedness'],
+            border_security: ['border','customs','surveillance','cross-border control'],
+            civil_protection: ['civil protection','first responder','public safety','rescue'],
+            critical_infrastructure: ['critical infrastructure','infrastructure protection','risk assessment'],
+            defence_dual_use: ['dual-use','dual use','situational awareness','threat detection']
+          }
+        },
+
+        "Digital, Industry & Space": {
+          label: "Digital, Industry & Space",
+          topics: {
+            ai: ['artificial intelligence','machine learning','ai ','generative ai','foundation model'],
+            robotics: ['robot','robotics','cobot','autonomous system'],
+            semiconductors: ['semiconductor','chip','microelectronics','photonics','integrated circuit'],
+            quantum: ['quantum','qubit','quantum computing','quantum communication'],
+            data_cloud: ['cloud','edge','data space','data sharing','interoperability'],
+            manufacturing: ['manufacturing','factory','industry 4.0','industrial process','advanced manufacturing'],
+            materials: ['advanced material','materials','composite','alloy','nanomaterial'],
+            space: ['space','satellite','launcher','earth observation','copernicus','galileo']
+          }
+        },
+
+        "Climate, Energy & Mobility": {
+          label: "Climate, Energy & Mobility",
+          topics: {
+            climate: ['climate','climatic','adaptation','mitigation','net zero','carbon','co2','ghg','emission'],
+            energy: ['energy','energies','electricity','power system','grid','electrification'],
+            hydrogen: ['hydrogen','h2','fuel cell','electrolyser','electrolysis'],
+            batteries: ['battery','batteries','cell','bms','accumulator'],
+            mobility: ['mobility','vehicle','vehicles','automotive','ev','electric vehicle'],
+            transport: ['transport','rail','aviation','shipping','maritime','logistics'],
+            renewables: ['renewable','solar','pv','photovoltaic','wind','geothermal','hydropower','biofuel'],
+            storage: ['storage','energy storage','thermal storage','long-duration storage'],
+            smart_grids: ['smart grid','smart grids','demand response','grid flexibility'],
+            buildings: ['building','buildings','retrofit','renovation','built environment'],
+            cities: ['city','cities','urban','smart city','smart cities'],
+            circularity: ['circular','recycling','reuse','remanufacturing'],
+            water: ['water','wastewater','aquatic','coastal','marine']
+          }
+        },
+
+        "Food, Bioeconomy & Environment": {
+          label: "Food, Bioeconomy & Environment",
+          topics: {
+            agriculture: ['agriculture','farming','crop','precision farming','agronomy'],
+            food_systems: ['food system','food systems','food processing','nutrition','food supply'],
+            bioeconomy: ['bioeconomy','biobased','bio-based','biomass','biorefinery'],
+            biodiversity: ['biodiversity','ecosystem','habitat','species restoration'],
+            forestry: ['forest','forestry','wood','silviculture'],
+            soil: ['soil','regenerative soil','land restoration','soil health'],
+            environment: ['environment','pollution','air quality','contaminant'],
+            water_resources: ['water resource','river basin','groundwater','freshwater']
+          }
+        },
+
+        "Defence": {
+          label: "Defence",
+          topics: {
+            defence_systems: ['defence system','military system','battlefield','mission system'],
+            autonomy: ['autonomous','unmanned','uas','uav','drone'],
+            sensing: ['radar','sonar','sensor fusion','detection'],
+            secure_comm: ['secure communication','encrypted communication','tactical network'],
+            materials_protection: ['ballistic','armour','protective materials','survivability']
+          }
+        },
+
+        "SME, Entrepreneurship & Market Uptake": {
+          label: "SME, Entrepreneurship & Market Uptake",
+          topics: {
+            startup: ['startup','spin-off','venture','new business'],
+            scaleup: ['scale-up','scaleup','growth company','go-to-market'],
+            innovation_uptake: ['market uptake','commercialisation','commercialization','deployment'],
+            entrepreneurship: ['entrepreneurship','entrepreneur','business model'],
+            sme_support: ['sme','small business','innovation support','acceleration']
+          }
+        },
+
+        "External Action & International Cooperation": {
+          label: "External Action & International Cooperation",
+          topics: {
+            development: ['development cooperation','development','capacity building'],
+            global_health: ['global health','health systems strengthening'],
+            governance: ['governance','institutional reform','public administration'],
+            humanitarian: ['humanitarian','humanitarian aid','relief'],
+            international_partnerships: ['international cooperation','partnership','bilateral','multilateral']
+          }
+        },
+
+        "Climate-neutral & Smart Cities": {
+          label: "Climate-neutral & Smart Cities",
+          topics: {
+            smart_cities: ['smart city','smart cities','urban innovation'],
+            urban_mobility: ['urban mobility','public transport','shared mobility'],
+            urban_energy: ['district energy','urban energy','local energy system'],
+            buildings: ['building','buildings','renovation','energy efficient building'],
+            climate_neutrality: ['climate-neutral','climate neutral','net zero city','urban decarbonisation']
+          }
+        },
+
+        "Healthy Oceans, Seas, Coastal & Inland Waters": {
+          label: "Healthy Oceans, Seas, Coastal & Inland Waters",
+          topics: {
+            marine: ['marine','ocean','sea','maritime ecosystem'],
+            coastal: ['coastal','shoreline','coast'],
+            inland_waters: ['lake','river','inland waters','freshwater'],
+            blue_economy: ['blue economy','fisheries','aquaculture','marine biotechnology'],
+            pollution_water: ['water pollution','marine litter','microplastic','wastewater']
+          }
+        },
+
+        "Clean Aviation": {
+          label: "Clean Aviation",
+          topics: {
+            aircraft: ['aircraft','airframe','aerostructure'],
+            propulsion: ['propulsion','engine','hybrid-electric propulsion','electric propulsion'],
+            sustainable_fuels: ['sustainable aviation fuel','saf','aviation fuel'],
+            emissions: ['aviation emissions','low-emission aviation','zero-emission aircraft'],
+            airport_ops: ['airport','ground operation','air traffic']
+          }
+        },
+
+        "Cross-cutting / Other": {
+          label: "Cross-cutting / Other",
+          topics: {
+            interdisciplinary: ['interdisciplinary','cross-sector','cross-cutting'],
+            policy: ['policy','regulation','standardisation','standardization'],
+            skills: ['skills','training','upskilling','reskilling'],
+            digital_transition: ['digital transition','digital transformation'],
+            green_transition: ['green transition','sustainability transition']
+          }
+        }
       };
 
       function escapeHtml(value) {
@@ -534,9 +693,9 @@
       }
 
       function prettyTopicLabel(key) {
-        return String(key || '').replace(/_/g, ' ').replace(/\b\w/g, function (c) {
-          return c.toUpperCase();
-        });
+        return String(key || '')
+          .replace(/_/g, ' ')
+          .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
       }
 
       function normalizeAction(value) {
@@ -544,9 +703,15 @@
       }
 
       function normalizeCluster(value) {
-        const s = String(value || '').trim();
+        if (value === null || value === undefined) return '';
+        const s = String(value).trim();
+        if (/^M-/.test(s) || MISSION_TO_CLUSTER[s]) return s;
         const match = s.match(/(\d+)/);
         return match ? match[1] : '';
+      }
+
+      function resolveCluster(value) {
+        return MISSION_TO_CLUSTER[value] || value;
       }
 
       function isHorizonProgramme(programme) {
@@ -563,72 +728,131 @@
         }[quarter] || '';
       }
 
-      function getSearchText(call) {
-        if (call && typeof call.search_blob === 'string' && call.search_blob.trim()) {
-          return call.search_blob.toLowerCase();
+      function parseLooseDate(value) {
+        if (!value) return null;
+
+        const direct = new Date(value);
+        if (!isNaN(direct)) return direct;
+
+        const match = String(value).match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+        if (!match) return null;
+
+        const months = {
+          january:0,february:1,march:2,april:3,may:4,june:5,
+          july:6,august:7,september:8,october:9,november:10,december:11
+        };
+
+        const monthIndex = months[match[2].toLowerCase()];
+        if (monthIndex === undefined) return null;
+
+        return new Date(Number(match[3]), monthIndex, Number(match[1]));
+      }
+
+      function fallbackIso(deadline) {
+        const parsed = parseLooseDate(deadline);
+        if (!parsed) return '';
+        return [
+          parsed.getFullYear(),
+          String(parsed.getMonth() + 1).padStart(2, '0'),
+          String(parsed.getDate()).padStart(2, '0')
+        ].join('-');
+      }
+
+      function getCumulationNote(programme) {
+        if (!programme) return CUMULATION_NOTES.default;
+        const p = String(programme).toLowerCase();
+
+        for (const key in CUMULATION_NOTES) {
+          if (key === 'default') continue;
+          if (p.includes(key.toLowerCase())) return CUMULATION_NOTES[key];
         }
+
+        return CUMULATION_NOTES.default;
+      }
+
+      function buildSearchText(call) {
         return [
           call.name,
           call.programme,
-          call.cluster_label,
           call.thematic_cluster,
+          call.cluster_label,
           call.action,
-          call.fulltext,
-          call.url
+          call.description,
+          call.objective,
+          call.scope,
+          call.destination,
+          call.topic
         ].filter(Boolean).join(' ').toLowerCase();
       }
 
-      function inferTopicsFallback(call) {
-        const cluster = String(call.thematic_cluster || '').trim();
-        const candidates = TOPIC_FALLBACKS[cluster] || [];
-        const text = getSearchText(call);
-        const found = [];
-
-        candidates.forEach(function (topic) {
-          const probe = topic.replace(/_/g, ' ');
-          if (text.includes(probe) || text.includes(topic)) {
-            found.push(topic);
-          }
-        });
-
-        return found;
+      function getTopicMapForCluster(clusterName) {
+        const entry = TOPIC_CATALOG[clusterName];
+        return entry ? entry.topics : {};
       }
 
-      function getTopics(call) {
-        if (Array.isArray(call.subtopics) && call.subtopics.length) {
-          return call.subtopics.filter(Boolean);
+      function inferTopics(call) {
+        const text = buildSearchText(call);
+        const topics = [];
+        const clusterName = String(call.thematic_cluster || '').trim();
+
+        const exactTopicMap = getTopicMapForCluster(clusterName);
+
+        for (const topicKey in exactTopicMap) {
+          const keywords = exactTopicMap[topicKey];
+          const found = keywords.some(function (keyword) {
+            return text.includes(keyword.toLowerCase());
+          });
+          if (found) topics.push(topicKey);
         }
-        return inferTopicsFallback(call);
+
+        if (!topics.length) {
+          for (const clusterKey in TOPIC_CATALOG) {
+            const genericMap = TOPIC_CATALOG[clusterKey].topics;
+            for (const topicKey in genericMap) {
+              const keywords = genericMap[topicKey];
+              const found = keywords.some(function (keyword) {
+                return text.includes(keyword.toLowerCase());
+              });
+              if (found && !topics.includes(topicKey)) topics.push(topicKey);
+            }
+          }
+        }
+
+        return topics;
       }
 
       function enrichCall(call) {
         return {
           ...call,
-          _topics: getTopics(call),
-          _searchText: getSearchText(call),
-          _action_norm: normalizeAction(call.action),
           _official_norm: normalizeCluster(call.cluster_num),
           _thematic_norm: String(call.thematic_cluster || '').trim(),
-          _deadline_norm: String(call.deadline_iso || '').trim(),
+          _action_norm: normalizeAction(call.action),
+          _deadline_norm: call.deadline_iso || fallbackIso(call.deadline),
           _is_horizon: isHorizonProgramme(call.programme),
-          _manual_override: Boolean(call.manual_override),
-          _manual_override_source: call.manual_override_source || ''
+          _topics: inferTopics(call),
+          _searchText: buildSearchText(call)
         };
       }
 
       function scoreCall(call, answers) {
         let score = 0;
+
         const wantedThematic = answers.thematic_cluster || '';
         const wantedOfficial = normalizeCluster(answers.official_cluster);
         const wantedAction = answers.action_type || '';
         const projectEnd = projectEndIso(answers.closure_year, answers.closure_quarter);
 
         if (wantedThematic && call._thematic_norm === wantedThematic) score += 60;
-        if (wantedOfficial && call._official_norm === wantedOfficial) score += 25;
+
+        if (wantedOfficial) {
+          const wantedResolved = resolveCluster(wantedOfficial);
+          const callResolved = resolveCluster(call._official_norm);
+          if (wantedResolved === callResolved) score += 25;
+        }
 
         if (wantedAction && call._is_horizon) {
           if (wantedAction === 'OTHER') {
-            if (!call._action_norm || !['IA', 'RIA', 'CSA', 'COFUND'].includes(call._action_norm)) score += 30;
+            if (!call._action_norm || !['IA','RIA','CSA','COFUND'].includes(call._action_norm)) score += 30;
           } else if (call._action_norm === wantedAction) {
             score += 35;
           }
@@ -646,7 +870,6 @@
 
         if (projectEnd && call._deadline_norm && call._deadline_norm > projectEnd) score += 15;
         if (call.is_mission) score += 8;
-        if (call._manual_override) score += 5;
 
         return score;
       }
@@ -666,8 +889,9 @@
         }
 
         if (wantedOfficial) {
+          const resolvedWanted = resolveCluster(wantedOfficial);
           out = out.filter(function (call) {
-            return call._official_norm === wantedOfficial;
+            return resolveCluster(call._official_norm) === resolvedWanted;
           });
         }
 
@@ -675,7 +899,7 @@
           out = out.filter(function (call) {
             if (!call._is_horizon) return true;
             if (wantedAction === 'OTHER') {
-              return !call._action_norm || !['IA', 'RIA', 'CSA', 'COFUND'].includes(call._action_norm);
+              return !call._action_norm || !['IA','RIA','CSA','COFUND'].includes(call._action_norm);
             }
             return call._action_norm === wantedAction;
           });
@@ -692,41 +916,48 @@
         });
 
         return out
-          .filter(function (call) { return call._score >= 20; })
+          .filter(function (call) {
+            return call._score >= 20;
+          })
           .sort(function (a, b) {
             if (b._score !== a._score) return b._score - a._score;
             return String(a._deadline_norm || '').localeCompare(String(b._deadline_norm || ''));
           });
       }
 
-      function populateDynamicTopicFilter(results) {
+      function populateDynamicTopicFilter(clusterName, results) {
+        const topicMap = getTopicMapForCluster(clusterName);
         const availableTopics = new Set();
 
         results.forEach(function (call) {
           (call._topics || []).forEach(function (topic) {
-            if (topic) availableTopics.add(topic);
+            if (topicMap[topic]) availableTopics.add(topic);
           });
         });
 
-        const topics = Array.from(availableTopics).sort(function (a, b) {
-          return prettyTopicLabel(a).localeCompare(prettyTopicLabel(b), 'it');
+        let options = '<option value="">Tutti i sottotemi</option>';
+
+        Object.keys(topicMap).forEach(function (topicKey) {
+          if (availableTopics.has(topicKey)) {
+            options += '<option value="' + escapeHtml(topicKey) + '">' + escapeHtml(prettyTopicLabel(topicKey)) + '</option>';
+          }
         });
 
-        let html = '<option value="">Tutti i sottotemi</option>';
+        if (options === '<option value="">Tutti i sottotemi</option>') {
+          Object.keys(topicMap).forEach(function (topicKey) {
+            options += '<option value="' + escapeHtml(topicKey) + '">' + escapeHtml(prettyTopicLabel(topicKey)) + '</option>';
+          });
+        }
 
-        topics.forEach(function (topic) {
-          html += '<option value="' + escapeHtml(topic) + '">' + escapeHtml(prettyTopicLabel(topic)) + '</option>';
-        });
-
-        liveTopicFilterEl.innerHTML = html;
+        liveTopicFilterEl.innerHTML = options;
       }
 
       function applyLiveFilters(results) {
-        const selectedTopic = liveTopicFilterEl.value.trim();
+        const topic = liveTopicFilterEl.value.trim();
         const keyword = keywordFilterEl.value.trim().toLowerCase();
 
         return results.filter(function (call) {
-          const okTopic = !selectedTopic || call._topics.includes(selectedTopic);
+          const okTopic = !topic || call._topics.includes(topic);
           const okKeyword = !keyword || call._searchText.includes(keyword);
           return okTopic && okKeyword;
         });
@@ -741,9 +972,13 @@
           'Action: ' + (answers.action_type || 'Qualsiasi')
         ];
 
-        return '<div class="summary">' + pills.map(function (item) {
-          return '<span class="pill">' + escapeHtml(item) + '</span>';
-        }).join('') + '</div>';
+        return (
+          '<div class="summary">' +
+          pills.map(function (item) {
+            return '<span class="pill">' + escapeHtml(item) + '</span>';
+          }).join('') +
+          '</div>'
+        );
       }
 
       function renderCalls(filtered, answers) {
@@ -752,7 +987,7 @@
 
         let html = '';
         html += renderSummary(answers);
-        html += '<div class="meta-box">Il dropdown viene popolato con tutti i sottotemi disponibili nei risultati generati, non con una sola opzione.</div>';
+        html += '<div class="meta-box">I sottotemi del menu sono adattati automaticamente all’area tematica selezionata nel questionario.</div>';
         html += '<div class="stats">Call trovate: ' + liveFiltered.length + ' <span class="muted">totali dopo i filtri</span></div>';
 
         if (!liveFiltered.length) {
@@ -769,13 +1004,12 @@
             call.cluster_label ? 'Horizon area: ' + call.cluster_label : '',
             call.action ? 'Action: ' + call.action : '',
             call.opening ? 'Opening: ' + call.opening : '',
-            call.deadline ? 'Deadline: ' + call.deadline : ''
+            call.deadline ? 'Deadline: ' + call.deadline : '',
+            call.budget ? 'Budget: ' + call.budget : ''
           ].filter(Boolean).join(' · ');
 
-          const missionBadge = call.is_mission ? '<span class="badge mission">Mission</span>' : '';
-          const overrideBadge = call._manual_override ? '<span class="badge override">Override</span>' : '';
-          const overrideNote = call._manual_override_source
-            ? '<div class="meta">Override applicato: ' + escapeHtml(call._manual_override_source) + '</div>'
+          const missionBadge = call.is_mission
+            ? '<span class="badge mission">Mission</span>'
             : '';
 
           const topicsHtml = call._topics.length
@@ -784,9 +1018,9 @@
               }).join('') + '</div>'
             : '';
 
-          const beneficiaryHtml = Array.isArray(call.beneficiary_hint) && call.beneficiary_hint.length
-            ? '<div class="meta">Beneficiary hint: ' + escapeHtml(call.beneficiary_hint.join(', ')) + '</div>'
-            : '';
+          const cumulationHtml = call._is_horizon
+            ? ''
+            : '<div class="cumulation-note"><strong>Cumulation con Horizon Europe:</strong> ' + escapeHtml(getCumulationNote(call.programme)) + '</div>';
 
           const urlHtml = call.url
             ? '<div class="meta">Link: <a href="' + encodeURI(call.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(call.url) + '</a></div>'
@@ -794,11 +1028,10 @@
 
           html +=
             '<article class="call ' + (call.is_mission ? 'mission' : '') + '">' +
-              '<h3>' + escapeHtml(call.name || '(senza nome)') + ' ' + missionBadge + ' ' + overrideBadge + '</h3>' +
+              '<h3>' + escapeHtml(call.name || '(senza nome)') + ' ' + missionBadge + '</h3>' +
               '<div class="meta">' + escapeHtml(meta) + '</div>' +
-              overrideNote +
-              beneficiaryHtml +
               topicsHtml +
+              cumulationHtml +
               urlHtml +
             '</article>';
         });
@@ -807,16 +1040,16 @@
         updateLoadMore(liveFiltered.length);
       }
 
-      function updateLoadMore(totalPool) {
-        if (totalPool <= 0) {
+      function updateLoadMore(totalVisiblePool) {
+        if (totalVisiblePool <= 0) {
           resultsFooterEl.classList.add('hidden');
           return;
         }
 
-        const shown = Math.min(visibleCount, totalPool);
-        resultsProgressEl.textContent = 'Stai vedendo ' + shown + ' risultati su ' + totalPool + '.';
+        const shown = Math.min(visibleCount, totalVisiblePool);
+        resultsProgressEl.textContent = 'Stai vedendo ' + shown + ' risultati su ' + totalVisiblePool + '.';
 
-        if (shown >= totalPool) {
+        if (shown >= totalVisiblePool) {
           loadMoreBtn.classList.add('hidden');
         } else {
           loadMoreBtn.classList.remove('hidden');
@@ -826,8 +1059,10 @@
       }
 
       async function loadCalls() {
+        if (Array.isArray(window.CALLS_DATA)) return window.CALLS_DATA;
+
         try {
-          const response = await fetch('./calls.json', { cache: 'no-store' });
+          const response = await fetch('./calls.json', { cache:'no-store' });
           const data = await response.json();
 
           if (data.generated) {
@@ -885,6 +1120,7 @@
         if (!CALLS.length) {
           showResultsArea();
           resultsEl.innerHTML = '<div class="error">Non riesco a caricare <code>calls.json</code>.</div>';
+          resultsFooterEl.classList.add('hidden');
           resultsSection.scrollIntoView({ behavior:'smooth', block:'start' });
           return;
         }
@@ -893,10 +1129,10 @@
         lastGeneratedResults = applyBaseFilters(CALLS, lastAnswers);
         visibleCount = PAGE_SIZE;
 
+        populateDynamicTopicFilter(lastAnswers.thematic_cluster, lastGeneratedResults);
         liveTopicFilterEl.value = '';
         keywordFilterEl.value = '';
 
-        populateDynamicTopicFilter(lastGeneratedResults);
         showResultsArea();
         renderCalls(lastGeneratedResults, lastAnswers);
         resultsSection.scrollIntoView({ behavior:'smooth', block:'start' });
