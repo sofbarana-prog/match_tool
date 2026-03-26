@@ -171,6 +171,16 @@
       background:#dbeafe;
     }
 
+    button.download{
+      background:#ecfeff;
+      color:#155e75;
+      border:1px solid #a5f3fc;
+    }
+
+    button.download:hover{
+      background:#cffafe;
+    }
+
     .meta-box{
       padding:12px 14px;
       background:#f8fafc;
@@ -478,7 +488,10 @@
 
       <div id="resultsFooter" class="results-footer hidden">
         <div id="resultsProgress" class="results-progress"></div>
-        <button id="loadMoreBtn" type="button" class="load-more">Mostra altri</button>
+        <div class="actions" style="margin-top:0; justify-content:center;">
+          <button id="downloadResultsBtn" type="button" class="download">Scarica risultati CSV</button>
+          <button id="loadMoreBtn" type="button" class="load-more">Mostra altri</button>
+        </div>
       </div>
     </section>
   </div>
@@ -497,6 +510,7 @@
       const resultsFooterEl = document.getElementById('resultsFooter');
       const resultsProgressEl = document.getElementById('resultsProgress');
       const loadMoreBtn = document.getElementById('loadMoreBtn');
+      const downloadResultsBtn = document.getElementById('downloadResultsBtn');
 
       let CALLS = [];
       let lastGeneratedResults = [];
@@ -963,6 +977,57 @@
         });
       }
 
+
+      function toCsvValue(value) {
+        const safe = String(value == null ? '' : value).replace(/
+?
+|
+/g, ' ').trim();
+        return '"' + safe.replace(/"/g, '""') + '"';
+      }
+
+      function downloadTextFile(filename, content, mimeType) {
+        const blob = new Blob([content], { type: mimeType + ';charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+      }
+
+      function buildCallsCsv(results) {
+        const headers = [
+          'name','programme','thematic_cluster','cluster_label','action','opening','deadline','budget',
+          'is_mission','topics','cumulation_note','url'
+        ];
+
+        const rows = results.map(function (call) {
+          return [
+            call.name || '',
+            call.programme || '',
+            call.thematic_cluster || '',
+            call.cluster_label || '',
+            call.action || '',
+            call.opening || '',
+            call.deadline || '',
+            call.budget || '',
+            call.is_mission ? 'yes' : 'no',
+            (call._topics || []).map(prettyTopicLabel).join(' | '),
+            call._is_horizon ? '' : getCumulationNote(call.programme),
+            call.url || ''
+          ];
+        });
+
+        return [headers.map(toCsvValue).join(',' )]
+          .concat(rows.map(function (row) {
+            return row.map(toCsvValue).join(',');
+          }))
+          .join('\n');
+      }
+
       function renderSummary(answers) {
         const pills = [
           'Chiusura: ' + answers.closure_year + ' ' + answers.closure_quarter,
@@ -1041,6 +1106,8 @@
       }
 
       function updateLoadMore(totalVisiblePool) {
+        if (downloadResultsBtn) downloadResultsBtn.disabled = totalVisiblePool <= 0;
+
         if (totalVisiblePool <= 0) {
           resultsFooterEl.classList.add('hidden');
           return;
@@ -1105,6 +1172,7 @@
         postFiltersEl.classList.add('hidden');
         resultsFooterEl.classList.add('hidden');
         loadMoreBtn.classList.remove('hidden');
+        if (downloadResultsBtn) downloadResultsBtn.disabled = true;
         resultsEl.innerHTML = '';
       }
 
@@ -1149,6 +1217,19 @@
       loadMoreBtn.addEventListener('click', function () {
         visibleCount += PAGE_SIZE;
         regenerateLiveFilters(false);
+      });
+
+      downloadResultsBtn.addEventListener('click', function () {
+        if (!lastAnswers || !lastGeneratedResults.length) return;
+
+        const liveFiltered = applyLiveFilters(lastGeneratedResults);
+        if (!liveFiltered.length) return;
+
+        const filename = 'funding-call-matcher-results-' +
+          String(lastAnswers.closure_year || 'export') + '-' +
+          String((lastAnswers.closure_quarter || 'QX')).toLowerCase() + '.csv';
+
+        downloadTextFile(filename, buildCallsCsv(liveFiltered), 'text/csv');
       });
 
       resetBtn.addEventListener('click', function () {
