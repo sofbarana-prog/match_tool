@@ -979,10 +979,7 @@
 
 
       function toCsvValue(value) {
-        const safe = String(value == null ? '' : value).replace(/
-?
-|
-/g, ' ').trim();
+        const safe = String(value == null ? '' : value).replace(/\r?\n|\r/g, ' ').trim();
         return '"' + safe.replace(/"/g, '""') + '"';
       }
 
