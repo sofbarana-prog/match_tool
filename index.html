@@ -1011,11 +1011,15 @@
           out.push(call.thematic_cluster);
         }
 
-        if (hasSpecialBasicResearchTitle(call) && !out.includes(SPECIAL_BASIC_RESEARCH_CATEGORY)) {
-          out.push(SPECIAL_BASIC_RESEARCH_CATEGORY);
-        }
-
         return out;
+      }
+
+      function isAssignedToSelection(call, thematic) {
+        if (!thematic) return false;
+        if (isSpecialBasicResearchCategory(thematic)) {
+          return !!call._is_special_basic_research;
+        }
+        return (call._assigned_thematic || []).includes(thematic);
       }
 
       function getKeywordMatchedThematic(call) {
@@ -1080,6 +1084,9 @@
         enriched._assigned_thematic = getAssignedThematic(enriched);
         enriched._keyword_thematic = getKeywordMatchedThematic(enriched);
         enriched._multi_thematic = enriched._assigned_thematic.slice();
+        if (enriched._is_special_basic_research && !enriched._multi_thematic.includes(SPECIAL_BASIC_RESEARCH_CATEGORY)) {
+          enriched._multi_thematic.push(SPECIAL_BASIC_RESEARCH_CATEGORY);
+        }
         return enriched;
       }
 
@@ -1087,8 +1094,8 @@
         const wantedPrimary = answers.thematic_cluster || '';
         const wantedSecondary = answers.secondary_thematic_cluster || '';
 
-        const isPrimaryByCluster = wantedPrimary && call._assigned_thematic.includes(wantedPrimary);
-        const isSecondaryByCluster = wantedSecondary && call._assigned_thematic.includes(wantedSecondary);
+        const isPrimaryByCluster = isAssignedToSelection(call, wantedPrimary);
+        const isSecondaryByCluster = isAssignedToSelection(call, wantedSecondary);
         const hasPrimaryKeywords = wantedPrimary && hasThematicKeywords(call, wantedPrimary);
         const hasSecondaryKeywords = wantedSecondary && hasThematicKeywords(call, wantedSecondary);
         const otherCluster = !isPrimaryByCluster && !isSecondaryByCluster;
@@ -1118,8 +1125,8 @@
         const wantedAction = answers.action_type || '';
         const projectEnd = projectEndIso(answers.closure_year, answers.closure_quarter);
 
-        const isPrimaryByCluster = wantedPrimary && call._assigned_thematic.includes(wantedPrimary);
-        const isSecondaryByCluster = wantedSecondary && call._assigned_thematic.includes(wantedSecondary);
+        const isPrimaryByCluster = isAssignedToSelection(call, wantedPrimary);
+        const isSecondaryByCluster = isAssignedToSelection(call, wantedSecondary);
         const hasPrimaryKeywords = wantedPrimary && hasThematicKeywords(call, wantedPrimary);
         const hasSecondaryKeywords = wantedSecondary && hasThematicKeywords(call, wantedSecondary);
 
@@ -1205,17 +1212,19 @@
 
         if (wantedPrimary && wantedSecondary) {
           out = out.filter(function (call) {
-            const isPrimaryByCluster = call._assigned_thematic.includes(wantedPrimary);
-            const isSecondaryByCluster = call._assigned_thematic.includes(wantedSecondary);
+            const isPrimaryByCluster = isAssignedToSelection(call, wantedPrimary);
+            const isSecondaryByCluster = isAssignedToSelection(call, wantedSecondary);
             const otherCluster = !isPrimaryByCluster && !isSecondaryByCluster;
+            const allowSpecialCrossMatch = isSpecialBasicResearchCategory(wantedPrimary) || isSpecialBasicResearchCategory(wantedSecondary);
+            const validOtherCluster = otherCluster && call._has_primary_keywords && call._has_secondary_keywords && (allowSpecialCrossMatch || !call._is_special_basic_research);
             return (isPrimaryByCluster && call._has_secondary_keywords)
               || isPrimaryByCluster
               || (isSecondaryByCluster && call._has_primary_keywords)
-              || (otherCluster && call._has_primary_keywords && call._has_secondary_keywords);
+              || validOtherCluster;
           });
         } else if (wantedPrimary) {
           out = out.filter(function (call) {
-            return call._assigned_thematic.includes(wantedPrimary) || call._has_primary_keywords;
+            return isAssignedToSelection(call, wantedPrimary) || (call._has_primary_keywords && (!call._is_special_basic_research || isSpecialBasicResearchCategory(wantedPrimary)));
           });
         }
 
