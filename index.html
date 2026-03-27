@@ -709,7 +709,7 @@
             inclusion: ['inclusion','social inclusion','inequality','participation','accessibility'],
             democracy: ['democracy','civic','governance','citizen engagement','institution'],
             education_society: ['education','skills','lifelong learning','social innovation'],
-            migration: ['migration','migrant','refugee','integration','diaspora']
+            migration: ['migration','migrant','refugee','diaspora']
           }
         },
 
@@ -753,7 +753,7 @@
             smart_grids: ['smart grid','smart grids','demand response','grid flexibility'],
             buildings: ['building','buildings','retrofit','renovation','built environment'],
             cities: ['city','cities','urban','smart city','smart cities'],
-            circularity: ['circular','recycling','reuse','remanufacturing'],
+            circularity: ['circular economy','circularity','recycling','remanufacturing'],
             water: ['water','wastewater','aquatic','coastal','marine']
           }
         },
@@ -993,15 +993,33 @@
         return keywords;
       }
 
-      function hasThematicKeywords(call, clusterName) {
-        if (!clusterName) return false;
+      function escapeRegex(value) {
+        return String(value).replace(/[.*+?^${}()|[\]\]/g, '\\$&');
+      }
+
+      function keywordPattern(keyword) {
+        const escaped = escapeRegex(String(keyword).toLowerCase().trim()).replace(/\s+/g, '\\s+');
+        return new RegExp('(^|[^a-z0-9])' + escaped + '(?=[^a-z0-9]|$)', 'i');
+      }
+
+      function keywordMatchesText(text, keyword) {
+        if (!text || !keyword) return false;
+        return keywordPattern(keyword).test(String(text).toLowerCase());
+      }
+
+      function getThematicKeywordHits(call, clusterName) {
+        if (!clusterName) return [];
         if (isSpecialBasicResearchCategory(clusterName)) {
-          return hasSpecialBasicResearchTitle(call);
+          return hasSpecialBasicResearchTitle(call) ? SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS.slice(0, 1) : [];
         }
         const searchText = call._searchText || '';
-        return getKeywordsForThematic(clusterName).some(function (keyword) {
-          return searchText.includes(String(keyword).toLowerCase());
+        return getKeywordsForThematic(clusterName).filter(function (keyword) {
+          return keywordMatchesText(searchText, keyword);
         });
+      }
+
+      function hasThematicKeywords(call, clusterName) {
+        return getThematicKeywordHits(call, clusterName).length > 0;
       }
 
       function getAssignedThematic(call) {
@@ -1049,7 +1067,7 @@
         for (const topicKey in exactTopicMap) {
           const keywords = exactTopicMap[topicKey];
           const found = keywords.some(function (keyword) {
-            return text.includes(keyword.toLowerCase());
+            return keywordMatchesText(text, keyword);
           });
           if (found && !topics.includes(topicKey)) topics.push(topicKey);
         }
@@ -1059,7 +1077,7 @@
           for (const topicKey in genericMap) {
             const keywords = genericMap[topicKey];
             const found = keywords.some(function (keyword) {
-              return text.includes(keyword.toLowerCase());
+              return keywordMatchesText(text, keyword);
             });
             if (found && !topics.includes(topicKey)) topics.push(topicKey);
           }
@@ -1204,8 +1222,10 @@
         }
 
         out.forEach(function (call) {
-          call._has_primary_keywords = wantedPrimary && hasThematicKeywords(call, wantedPrimary);
-          call._has_secondary_keywords = wantedSecondary && hasThematicKeywords(call, wantedSecondary);
+          call._primary_keyword_hits = wantedPrimary ? getThematicKeywordHits(call, wantedPrimary) : [];
+          call._secondary_keyword_hits = wantedSecondary ? getThematicKeywordHits(call, wantedSecondary) : [];
+          call._has_primary_keywords = call._primary_keyword_hits.length > 0;
+          call._has_secondary_keywords = call._secondary_keyword_hits.length > 0;
           call._priority_bucket = getPriorityBucket(call, answers);
           call._score = scoreCall(call, answers);
         });
