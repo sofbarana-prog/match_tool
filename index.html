@@ -134,8 +134,29 @@
           <label for="keyword_filter">Filtro keyword</label>
           <input id="keyword_filter" type="text" placeholder="Es. hydrogen, robotics, cancer..." />
         </div>
+        <div style="flex:0 0 200px;min-width:unset">
+          <label for="sort_by">Ordina per</label>
+          <select id="sort_by">
+            <option value="relevance">Rilevanza</option>
+            <option value="deadline">Scadenza (prima → dopo)</option>
+          </select>
+        </div>
         <div style="flex:0 0 auto;min-width:unset">
           <button id="downloadResultsBtn" type="button" class="download">Scarica risultati CSV</button>
+        </div>
+      </div>
+      <div id="budgetFilterRow" class="hidden" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:0 0 16px">
+        <div style="flex:1;min-width:160px">
+          <label for="budget_min">Budget minimo (€)</label>
+          <input id="budget_min" type="text" placeholder="Es. 500000" />
+        </div>
+        <div style="flex:1;min-width:160px">
+          <label for="budget_max">Budget massimo (€)</label>
+          <input id="budget_max" type="text" placeholder="Es. 5000000" />
+        </div>
+        <div style="flex:0 0 auto">
+          <button id="applyBudgetBtn" type="button" class="secondary">Applica</button>
+          <button id="clearBudgetBtn" type="button" class="secondary" style="margin-left:6px">Reset</button>
         </div>
       </div>
       <div id="results"></div>
@@ -185,11 +206,19 @@
   const lastUpdatedEl = document.getElementById('lastUpdated');
   const primaryEl = document.getElementById('thematic_cluster');
   const secondaryEl = document.getElementById('secondary_thematic_cluster');
+  const sortByEl = document.getElementById('sort_by');
+  const budgetFilterRow = document.getElementById('budgetFilterRow');
+  const budgetMinEl = document.getElementById('budget_min');
+  const budgetMaxEl = document.getElementById('budget_max');
+  const applyBudgetBtn = document.getElementById('applyBudgetBtn');
+  const clearBudgetBtn = document.getElementById('clearBudgetBtn');
 
   let CALLS = [];
   let visibleCount = PAGE_SIZE;
   let lastAnswers = null;
   let lastGeneratedResults = [];
+  let activeBudgetMin = 0;
+  let activeBudgetMax = Infinity;
 
   function esc(s){ return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function norm(s){ return String(s || '').trim(); }
@@ -277,14 +306,27 @@
 
     return {bucket, score, primaryAssigned, secondaryAssigned, primaryHits, secondaryHits};
   }
+  function parseBudgetInput(s){ const n = parseFloat(String(s||'').replace(/[.,\s]/g,'')); return isNaN(n) ? 0 : n; }
+  function fmtBudget(n){ if(!n || n===0) return null; if(n>=1e9) return (n/1e9).toFixed(1).replace(/\.0$/,'') + ' B €'; if(n>=1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'') + ' M €'; if(n>=1e3) return (n/1e3).toFixed(0) + ' K €'; return n.toLocaleString('it-IT') + ' €'; }
   function applyFilters(calls, answers){
     const projectEnd = projectEndIso(answers.closure_year, answers.closure_quarter);
-    return calls.map(enrichCall).map(call => {
+    const sorted = calls.map(enrichCall).map(call => {
       if (projectEnd && call._deadline_norm && call._deadline_norm <= projectEnd) return null;
       const bs = bucketAndScore(call, answers);
       if (!bs) return null;
       return {...call, _bucket: bs.bucket, _score: bs.score, _primaryAssigned: bs.primaryAssigned, _secondaryAssigned: bs.secondaryAssigned, _primaryHits: bs.primaryHits, _secondaryHits: bs.secondaryHits};
-    }).filter(Boolean).sort((a,b) => {
+    }).filter(Boolean);
+    return sortResults(sorted);
+  }
+  function sortResults(results){
+    const mode = sortByEl ? sortByEl.value : 'relevance';
+    if (mode === 'deadline') {
+      return results.slice().sort((a,b) => {
+        const da = a._deadline_norm || '9999', db = b._deadline_norm || '9999';
+        return da.localeCompare(db);
+      });
+    }
+    return results.slice().sort((a,b) => {
       if (a._bucket !== b._bucket) return a._bucket - b._bucket;
       if (b._score !== a._score) return b._score - a._score;
       return String(a._deadline_norm || '').localeCompare(String(b._deadline_norm || ''));
@@ -292,8 +334,16 @@
   }
   function applyLiveKeyword(results){
     const q = lower(keywordFilterEl.value || '').trim();
-    if (!q) return results;
-    return results.filter(c => c._search.includes(q));
+    let out = q ? results.filter(c => c._search.includes(q)) : results;
+    if (activeBudgetMin > 0 || activeBudgetMax < Infinity) {
+      out = out.filter(c => {
+        const b = c.budget || 0;
+        if (activeBudgetMin > 0 && b < activeBudgetMin) return false;
+        if (activeBudgetMax < Infinity && b > activeBudgetMax) return false;
+        return true;
+      });
+    }
+    return out;
   }
   function bucketLabel(call){
     if (call._bucket === 1) return 'Match primario + secondario';
@@ -329,7 +379,8 @@
         call.cluster_label ? `Horizon area: ${esc(call.cluster_label)}` : '',
         call.action ? `Action: ${esc(call.action)}` : '',
         call.opening ? `Opening: ${esc(call.opening)}` : '',
-        call.deadline ? `Deadline: ${esc(call.deadline)}` : ''
+        call.deadline ? `Deadline: ${esc(call.deadline)}` : '',
+        fmtBudget(call.budget) ? `Budget: ${esc(fmtBudget(call.budget))}` : ''
       ].filter(Boolean).join(' · ');
       const badges = [`<span class="badge">${bucketLabel(call)}</span>`];
       if (call._primaryAssigned) badges.push('<span class="badge">cluster/programme primario</span>');
@@ -354,9 +405,9 @@
     const filtered = applyLiveKeyword(lastGeneratedResults);
     const rows = filtered.map(c => ({
       name:c.name||'', programme:c.programme||'', thematic_cluster:c.thematic_cluster||'', cluster_label:c.cluster_label||'',
-      action:c.action||'', opening:c.opening||'', deadline:c.deadline||'', url:c.url||'', bucket:c._bucket||'', score:c._score||''
+      action:c.action||'', opening:c.opening||'', deadline:c.deadline||'', budget:c.budget||'', url:c.url||'', bucket:c._bucket||'', score:c._score||''
     }));
-    const headers = Object.keys(rows[0] || {name:'',programme:'',thematic_cluster:'',cluster_label:'',action:'',opening:'',deadline:'',url:'',bucket:'',score:''});
+    const headers = Object.keys(rows[0] || {name:'',programme:'',thematic_cluster:'',cluster_label:'',action:'',opening:'',deadline:'',budget:'',url:'',bucket:'',score:''});
     const csv = [headers.join(',')].concat(rows.map(r => headers.map(h => '"' + String(r[h] ?? '').replace(/"/g,'""') + '"').join(','))).join('\n');
     const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'results.csv'; a.click(); URL.revokeObjectURL(a.href);
@@ -381,13 +432,41 @@
     visibleCount = PAGE_SIZE;
     lastGeneratedResults = applyFilters(CALLS, answers);
     resultsSection.classList.remove('hidden');
+    budgetFilterRow.classList.remove('hidden');
+    budgetFilterRow.style.display = 'flex';
     renderCalls();
     resultsSection.scrollIntoView({behavior:'smooth', block:'start'});
   });
   keywordFilterEl.addEventListener('input', () => { if (lastAnswers) { visibleCount = PAGE_SIZE; renderCalls(); } });
+  sortByEl.addEventListener('change', () => {
+    if (lastAnswers) {
+      lastGeneratedResults = sortResults(lastGeneratedResults);
+      visibleCount = PAGE_SIZE;
+      renderCalls();
+    }
+  });
+  applyBudgetBtn.addEventListener('click', () => {
+    activeBudgetMin = parseBudgetInput(budgetMinEl.value);
+    activeBudgetMax = parseBudgetInput(budgetMaxEl.value) || Infinity;
+    visibleCount = PAGE_SIZE;
+    renderCalls();
+  });
+  clearBudgetBtn.addEventListener('click', () => {
+    budgetMinEl.value = ''; budgetMaxEl.value = '';
+    activeBudgetMin = 0; activeBudgetMax = Infinity;
+    visibleCount = PAGE_SIZE;
+    renderCalls();
+  });
   loadMoreBtn.addEventListener('click', () => { visibleCount += PAGE_SIZE; renderCalls(); });
   downloadResultsBtn.addEventListener('click', () => { if (lastAnswers) downloadCsv(); });
-  resetBtn.addEventListener('click', () => { form.reset(); secondaryEl.value=''; resultsSection.classList.add('hidden'); resultsEl.innerHTML=''; resultsFooterEl.classList.add('hidden'); keywordFilterEl.value=''; });
+  resetBtn.addEventListener('click', () => {
+    form.reset(); secondaryEl.value='';
+    resultsSection.classList.add('hidden');
+    budgetFilterRow.classList.add('hidden');
+    resultsEl.innerHTML=''; resultsFooterEl.classList.add('hidden');
+    keywordFilterEl.value=''; budgetMinEl.value=''; budgetMaxEl.value='';
+    activeBudgetMin=0; activeBudgetMax=Infinity;
+  });
 
   async function loadCalls(){
     try {
