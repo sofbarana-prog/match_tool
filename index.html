@@ -6,524 +6,78 @@
   <title>Funding Call Matcher</title>
   <style>
     :root{
-      --bg:#f4f1ea;
-      --paper:#fbf8f3;
-      --card:#fdfbf7;
-      --card-strong:#ffffff;
-      --border:#d9d1c3;
-      --text:#14305f;
-      --muted:#6f7785;
-      --primary:#0f4cc9;
-      --primary-dark:#0b3da5;
-      --secondary:#ebe5da;
-      --accent:#d97706;
-      --success-bg:#eef7ef;
-      --success-border:#b8d8bc;
-      --shadow:0 20px 50px rgba(20,48,95,.08);
-      --radius-xxl:36px;
-      --radius-xl:28px;
-      --radius-lg:18px;
-      --radius-pill:999px;
+      --bg:#f6f4ef; --card:#ffffff; --line:#d7d4cc; --text:#1e2a44; --muted:#67748b;
+      --accent:#e4a51a; --accent2:#eaf0ff; --tag:#edf3ff; --tag-line:#bfd2ff; --shadow:0 10px 30px rgba(21,34,56,.06);
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     }
-
-    *{ box-sizing:border-box; }
-    html{ scroll-behavior:smooth; }
-
-    body{
-      margin:0;
-      background:
-        radial-gradient(circle at top left, rgba(15,76,201,.07), transparent 30%),
-        linear-gradient(180deg, var(--paper) 0%, var(--bg) 100%);
-      color:var(--text);
-      letter-spacing:-0.01em;
-    }
-
-    .page{
-      max-width:1240px;
-      margin:0 auto;
-      padding:28px 20px 72px;
-    }
-
-    .hero{
-      position:relative;
-      overflow:hidden;
-      margin-bottom:28px;
-      padding:56px 56px 44px;
-      border:1px solid rgba(20,48,95,.1);
-      border-radius:var(--radius-xxl);
-      background:
-        linear-gradient(135deg, rgba(255,255,255,.94), rgba(249,245,237,.92)),
-        linear-gradient(135deg, rgba(15,76,201,.06), transparent);
-      box-shadow:var(--shadow);
-    }
-
-    .hero::before{
-      content:"";
-      position:absolute;
-      inset:auto -60px -80px auto;
-      width:260px;
-      height:260px;
-      border-radius:50%;
-      background:radial-gradient(circle, rgba(15,76,201,.12), transparent 70%);
-      pointer-events:none;
-    }
-
-    .eyebrow{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      margin-bottom:16px;
-      text-transform:uppercase;
-      letter-spacing:.14em;
-      font-size:.77rem;
-      font-weight:800;
-      color:var(--primary);
-    }
-
-    .eyebrow::before{
-      content:"";
-      width:32px;
-      height:1px;
-      background:currentColor;
-      opacity:.7;
-    }
-
-    .hero-grid{
-      display:grid;
-      grid-template-columns:minmax(0,1.5fr) minmax(260px,.8fr);
-      gap:24px;
-      align-items:end;
-    }
-
-    .hero h1{
-      margin:0 0 14px;
-      font-size:clamp(2.5rem, 5vw, 4.6rem);
-      line-height:.98;
-      max-width:9ch;
-    }
-
-    .hero p{
-      margin:0;
-      max-width:780px;
-      color:var(--muted);
-      font-size:1.03rem;
-      line-height:1.75;
-    }
-
-    .hero-panel{
-      align-self:stretch;
-      display:flex;
-      flex-direction:column;
-      justify-content:flex-end;
-      gap:14px;
-      padding:22px;
-      border:1px solid rgba(20,48,95,.1);
-      border-radius:24px;
-      background:rgba(255,255,255,.72);
-      backdrop-filter:blur(10px);
-    }
-
-    .hero-panel strong{
-      font-size:1rem;
-    }
-
-    .hero-panel span{
-      color:var(--muted);
-      line-height:1.65;
-      font-size:.95rem;
-    }
-
-    .card{
-      background:rgba(255,255,255,.78);
-      border:1px solid rgba(20,48,95,.1);
-      border-radius:var(--radius-xxl);
-      box-shadow:var(--shadow);
-      backdrop-filter:blur(10px);
-    }
-
-    .form-card{ padding:32px; }
-    .results-card{ margin-top:28px; padding:32px; }
-
-    fieldset{
-      margin:0 0 18px;
-      border:1px solid rgba(20,48,95,.12);
-      border-radius:24px;
-      padding:18px;
-      background:rgba(255,255,255,.78);
-    }
-
-    legend{
-      padding:0 10px;
-      font-weight:800;
-      font-size:1rem;
-      color:var(--text);
-    }
-
-    label{
-      display:block;
-      margin:10px 0 6px;
-      font-size:.92rem;
-      font-weight:700;
-      color:var(--text);
-    }
-
-    .hint{
-      margin:4px 0 0;
-      color:var(--muted);
-      font-size:.88rem;
-      line-height:1.6;
-    }
-
-    .grid-2{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:14px;
-    }
-
-    select,
-    input[type="text"]{
-      width:100%;
-      border:1px solid rgba(20,48,95,.14);
-      border-radius:14px;
-      padding:14px 15px;
-      font-size:.97rem;
-      background:rgba(255,255,255,.96);
-      color:var(--text);
-      outline:none;
-      transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
-    }
-
-    select:focus,
-    input[type="text"]:focus{
-      border-color:rgba(15,76,201,.48);
-      box-shadow:0 0 0 4px rgba(15,76,201,.10);
-      transform:translateY(-1px);
-    }
-
-    .radio-group{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px 12px;
-      margin-top:10px;
-    }
-
-    .radio-option{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      font-weight:600;
-      margin:0;
-      padding:10px 14px;
-      border:1px solid rgba(20,48,95,.12);
-      border-radius:999px;
-      background:rgba(255,255,255,.8);
-    }
-
-    .actions{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-top:14px;
-    }
-
-    button{
-      border:0;
-      border-radius:999px;
-      padding:13px 20px;
-      font-size:.94rem;
-      font-weight:800;
-      cursor:pointer;
-      transition:.18s ease;
-    }
-
-    button:hover{ transform:translateY(-1px); }
-
-    button.primary{
-      background:var(--primary);
-      color:#fff;
-    }
-
-    button.primary:hover{ background:var(--primary-dark); }
-
-    button.secondary{
-      background:var(--secondary);
-      color:var(--text);
-    }
-
-    button.load-more{
-      background:rgba(15,76,201,.08);
-      color:var(--primary);
-      border:1px solid rgba(15,76,201,.15);
-    }
-
-    button.load-more:hover{ background:rgba(15,76,201,.12); }
-
-    button.download{
-      background:rgba(20,48,95,.06);
-      color:var(--text);
-      border:1px solid rgba(20,48,95,.12);
-    }
-
-    button.download:hover{ background:rgba(20,48,95,.1); }
-
-    .meta-box{
-      padding:14px 16px;
-      background:rgba(20,48,95,.04);
-      border:1px solid rgba(20,48,95,.1);
-      border-radius:18px;
-      color:var(--muted);
-      font-size:.92rem;
-      line-height:1.6;
-      margin-bottom:18px;
-    }
-
-    .summary{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-bottom:16px;
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      padding:8px 12px;
-      border-radius:var(--radius-pill);
-      background:rgba(255,255,255,.92);
-      border:1px solid rgba(20,48,95,.1);
-      font-size:.86rem;
-      font-weight:600;
-    }
-
-    .toolbar{
-      display:flex;
-      flex-wrap:wrap;
-      gap:14px;
-      align-items:end;
-      margin-bottom:18px;
-      padding:18px 0 20px;
-      border-bottom:1px solid rgba(20,48,95,.12);
-    }
-
-    .toolbar .field{
-      min-width:220px;
-      flex:1 1 220px;
-    }
-
-    .section-title{
-      margin:0 0 8px;
-      font-size:1.55rem;
-      line-height:1.1;
-    }
-
-    .section-subtitle{
-      margin:0 0 18px;
-      color:var(--muted);
-      line-height:1.7;
-      max-width:850px;
-    }
-
-    .stats{
-      margin:0 0 18px;
-      font-size:1rem;
-      font-weight:800;
-      color:var(--text);
-    }
-
-    .call{
-      border:1px solid rgba(20,48,95,.1);
-      border-radius:26px;
-      padding:20px;
-      background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(251,248,243,.92));
-      margin-bottom:16px;
-    }
-
-    .call.mission{
-      border-left:5px solid var(--accent);
-      background:linear-gradient(180deg, rgba(255,252,246,.98), rgba(252,247,235,.94));
-    }
-
-    .call h3{
-      margin:0 0 8px;
-      font-size:1.08rem;
-      line-height:1.5;
-    }
-
-    .call .meta{
-      color:#4d5d77;
-      font-size:.93rem;
-      line-height:1.68;
-      margin:6px 0;
-    }
-
-    .badge{
-      display:inline-block;
-      font-size:.73rem;
-      font-weight:800;
-      padding:5px 9px;
-      border-radius:999px;
-      vertical-align:middle;
-      margin-left:8px;
-    }
-
-    .badge.mission{
-      background:var(--accent);
-      color:#fff;
-    }
-
-    .topic-tags{
-      margin-top:12px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
-
-    .topic-tag{
-      display:inline-flex;
-      align-items:center;
-      padding:6px 10px;
-      border-radius:999px;
-      background:rgba(15,76,201,.08);
-      color:var(--primary);
-      border:1px solid rgba(15,76,201,.14);
-      font-size:.8rem;
-      font-weight:700;
-    }
-
-    .cumulation-note{
-      margin-top:12px;
-      padding:11px 13px;
-      border-radius:14px;
-      background:var(--success-bg);
-      border:1px solid var(--success-border);
-      font-size:.88rem;
-      line-height:1.6;
-      color:#1f5130;
-    }
-
-    .empty,
-    .error{
-      padding:18px;
-      border-radius:20px;
-      border:1px solid rgba(20,48,95,.1);
-      background:rgba(255,255,255,.88);
-    }
-
-    .error{
-      color:#991b1b;
-      background:#fef2f2;
-      border-color:#fecaca;
-    }
-
-    .muted{ color:var(--muted); }
-
-    a{
-      color:var(--primary);
-      word-break:break-word;
-      text-underline-offset:3px;
-    }
-
-    .hidden{ display:none; }
-
-    .results-footer{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:10px;
-      margin-top:18px;
-    }
-
-    .results-progress{
-      color:var(--muted);
-      font-size:.92rem;
-    }
-
-
-    .hero-grid-single{
-      grid-template-columns:minmax(0,1fr);
-    }
-
-    .content-layout{
-      display:grid;
-      grid-template-columns:minmax(0,1fr);
-      gap:24px;
-      align-items:start;
-    }
-
-    .sidebar-shell,
-    .results-shell{
-      min-width:0;
-    }
-
-    .sidebar-shell{
-      position:static;
-    }
-
-    .sidebar-card{
-      margin-bottom:0;
-    }
-
-    @media (max-width: 980px){
-      .content-layout{ grid-template-columns:1fr; }
-    }
-
-    @media (max-width: 900px){
-      .hero{ padding:38px 24px 30px; }
-      .hero-grid{ grid-template-columns:1fr; }
-      .hero h1{ max-width:unset; }
-    }
-
-    @media (max-width: 760px){
-      .grid-2{ grid-template-columns:1fr; }
-      .page{ padding:16px 12px 42px; }
-      .form-card, .results-card{ padding:20px; }
-      .hero h1{ font-size:2.45rem; }
-    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text)}
+    .page{max-width:1160px;margin:0 auto;padding:32px 20px 64px}
+    .hero{margin-bottom:20px}
+    .hero h1{margin:0 0 8px;font-size:2.2rem;line-height:1.05}
+    .hero p{margin:0;max-width:760px;color:var(--muted);line-height:1.6}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow)}
+    .form-card{padding:24px 24px 18px}
+    fieldset{margin:0 0 16px;border:1px solid var(--line);border-radius:20px;padding:16px;background:#fff}
+    legend{padding:0 8px;font-weight:800}
+    label{display:block;margin:8px 0 6px;font-weight:700}
+    .hint{margin:4px 0 0;color:var(--muted);font-size:.92rem}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    select,input[type="text"]{width:100%;padding:12px 14px;border-radius:14px;border:1px solid #cfd5e2;background:white;font-size:.98rem;color:var(--text)}
+    select:focus,input[type="text"]:focus{outline:none;border-color:#9eb8ff;box-shadow:0 0 0 4px rgba(74,120,255,.12)}
+    .radio{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:8px}
+    .radio label{margin:0;font-weight:600;display:flex;gap:8px;align-items:center}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+    button{border:0;border-radius:999px;padding:13px 18px;font-weight:800;cursor:pointer}
+    .primary{background:var(--text);color:#fff}
+    .secondary{background:#e9e4da;color:var(--text)}
+    .download{background:var(--accent2);color:var(--text)}
+    .results{margin-top:24px}
+    .toolbar{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin:0 0 16px}
+    .toolbar > div{min-width:240px;flex:1}
+    .summary{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+    .pill{display:inline-block;padding:8px 12px;border-radius:999px;background:#f7f8fb;border:1px solid #e1e6ef;font-size:.93rem}
+    .stats{margin:0 0 16px;color:var(--muted)}
+    .call{padding:22px 22px 18px;border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:24px;background:#fff;margin-bottom:16px}
+    .call h3{margin:0 0 10px;font-size:1.18rem;line-height:1.3}
+    .meta{color:#56657d;line-height:1.55;font-size:.98rem;word-break:break-word}
+    .tags,.matchbadges{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+    .tag{display:inline-block;padding:8px 12px;border-radius:999px;border:1px solid var(--tag-line);background:var(--tag);color:#2957c8;font-weight:700}
+    .badge{display:inline-block;padding:7px 11px;border-radius:999px;font-size:.86rem;font-weight:800;background:#fff3d9;color:#8a5b00;border:1px solid #f3d185}
+    .link{margin-top:14px;word-break:break-word}
+    .link a{color:#2f63dd}
+    .hidden{display:none!important}
+    .empty,.error,.info{padding:16px 18px;border-radius:18px;border:1px solid var(--line);background:#fff}
+    .footer{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:14px}
+    .muted{color:var(--muted)}
+    @media (max-width:760px){.grid{grid-template-columns:1fr}.page{padding:22px 14px 48px}.form-card{padding:18px}.toolbar{display:block}.toolbar>div{margin-bottom:12px}}
   </style>
 </head>
 <body>
   <div class="page">
     <header class="hero">
-      <div class="eyebrow">Funding opportunities</div>
-      <div class="hero-grid hero-grid-single">
-        <div>
-          <h1>Funding Call Matcher</h1>
-          <p>
-            Compila il questionario per generare le call più coerenti con il progetto.
-          </p>
-        </div>
-      </div>
+      <h1>Funding Call Matcher</h1>
+      <p>Seleziona area primaria e secondaria per ordinare le call in base a cluster/programma e ai match trasversali trovati nel testo completo.</p>
     </header>
 
-    <div class="content-layout">
-      <section class="card form-card sidebar-card">
-      <div id="lastUpdated" class="meta-box hidden"></div>
-
+    <section class="card form-card">
+      <div id="lastUpdated" class="hint"></div>
       <form id="surveyForm">
         <fieldset>
           <legend>1) Timeframe progetto</legend>
-          <div class="grid-2">
+          <div class="grid">
             <div>
               <label for="closure_year">Anno di chiusura</label>
               <select id="closure_year" name="closure_year" required>
                 <option value="" selected disabled>Seleziona…</option>
-                <option value="2026">2026</option>
-                <option value="2027">2027</option>
-                <option value="2028">2028</option>
-                <option value="2029">2029</option>
-                <option value="2030">2030</option>
+                <option>2026</option><option>2027</option><option>2028</option><option>2029</option><option>2030</option>
               </select>
             </div>
-
             <div>
               <label for="closure_quarter">Quarter</label>
               <select id="closure_quarter" name="closure_quarter" required>
                 <option value="" selected disabled>Seleziona…</option>
-                <option value="Q1">Q1</option>
-                <option value="Q2">Q2</option>
-                <option value="Q3">Q3</option>
-                <option value="Q4">Q4</option>
+                <option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option>
               </select>
             </div>
           </div>
@@ -531,1043 +85,329 @@
 
         <fieldset>
           <legend>2) Natura del progetto</legend>
-          <label>Tipologia ricerca</label>
-          <div class="radio-group">
-            <label class="radio-option"><input type="radio" name="project_nature" value="" checked> Qualsiasi</label>
-            <label class="radio-option"><input type="radio" name="project_nature" value="basic"> Basic</label>
-            <label class="radio-option"><input type="radio" name="project_nature" value="applied"> Applied</label>
-            <label class="radio-option"><input type="radio" name="project_nature" value="industrial"> Industrial</label>
+          <div class="radio">
+            <label><input type="radio" name="project_nature" value="" checked> Qualsiasi</label>
+            <label><input type="radio" name="project_nature" value="basic"> Basic research</label>
+            <label><input type="radio" name="project_nature" value="applied"> Applied research</label>
+            <label><input type="radio" name="project_nature" value="industrial"> Industrial research</label>
           </div>
         </fieldset>
 
         <fieldset>
-          <legend>3) Cluster</legend>
-          <label for="thematic_cluster">Area tematica principale</label>
-          <select id="thematic_cluster" name="thematic_cluster" required>
-            <option value="" selected disabled>Seleziona…</option>
-            <option value="Health &amp; Life Sciences">Health &amp; Life Sciences</option>
-            <option value="Culture, Creativity &amp; Inclusion">Culture, Creativity &amp; Inclusion</option>
-            <option value="Security &amp; Resilience">Security &amp; Resilience</option>
-            <option value="Digital, Industry &amp; Space">Digital, Industry &amp; Space</option>
-            <option value="Climate, Energy &amp; Mobility">Climate, Energy &amp; Mobility</option>
-            <option value="Food, Bioeconomy &amp; Environment">Food, Bioeconomy &amp; Environment</option>
-            <option value="Defence">Defence</option>
-            <option value="SME, Entrepreneurship &amp; Market Uptake">SME, Entrepreneurship &amp; Market Uptake</option>
-            <option value="External Action &amp; International Cooperation">External Action &amp; International Cooperation</option>
-            <option value="Climate-neutral &amp; Smart Cities">Climate-neutral &amp; Smart Cities</option>
-            <option value="Healthy Oceans, Seas, Coastal &amp; Inland Waters">Healthy Oceans, Seas, Coastal &amp; Inland Waters</option>
-            <option value="Clean Aviation">Clean Aviation</option>
-            <option value="Internships, fellowships & scholarships">Internships, fellowships & scholarships</option>
-            <option value="Cross-cutting / Other">Cross-cutting / Other</option>
-          </select>
-
-          <label for="secondary_thematic_cluster" style="margin-top:12px;">Area tematica secondaria</label>
-          <select id="secondary_thematic_cluster" name="secondary_thematic_cluster">
-            <option value="">Nessuna</option>
-            <option value="Health &amp; Life Sciences">Health &amp; Life Sciences</option>
-            <option value="Culture, Creativity &amp; Inclusion">Culture, Creativity &amp; Inclusion</option>
-            <option value="Security &amp; Resilience">Security &amp; Resilience</option>
-            <option value="Digital, Industry &amp; Space">Digital, Industry &amp; Space</option>
-            <option value="Climate, Energy &amp; Mobility">Climate, Energy &amp; Mobility</option>
-            <option value="Food, Bioeconomy &amp; Environment">Food, Bioeconomy &amp; Environment</option>
-            <option value="Defence">Defence</option>
-            <option value="SME, Entrepreneurship &amp; Market Uptake">SME, Entrepreneurship &amp; Market Uptake</option>
-            <option value="External Action &amp; International Cooperation">External Action &amp; International Cooperation</option>
-            <option value="Climate-neutral &amp; Smart Cities">Climate-neutral &amp; Smart Cities</option>
-            <option value="Healthy Oceans, Seas, Coastal &amp; Inland Waters">Healthy Oceans, Seas, Coastal &amp; Inland Waters</option>
-            <option value="Clean Aviation">Clean Aviation</option>
-            <option value="Internships, fellowships & scholarships">Internships, fellowships & scholarships</option>
-            <option value="Cross-cutting / Other">Cross-cutting / Other</option>
-          </select>
-
-          <label for="official_cluster" style="margin-top:12px;">Cluster Horizon Europe ufficiale</label>
-          <p class="hint">
-            Se scegli un cluster ufficiale, il matching si restringe alle call Horizon Europe coerenti con quel cluster.
-          </p>
-          <select id="official_cluster" name="official_cluster">
-            <option value="">Qualsiasi / non applicabile</option>
-            <option value="1">Cluster 1: Health</option>
-            <option value="2">Cluster 2: Culture, Creativity and Inclusive Society</option>
-            <option value="3">Cluster 3: Civil Security for Society</option>
-            <option value="4">Cluster 4: Digital, Industry and Space</option>
-            <option value="5">Cluster 5: Climate, Energy and Mobility</option>
-            <option value="6">Cluster 6: Food, Bioeconomy, Natural Resources, Agriculture and Environment</option>
-          </select>
+          <legend>3) Aree tematiche</legend>
+          <div class="grid">
+            <div>
+              <label for="thematic_cluster">Area tematica principale</label>
+              <select id="thematic_cluster" name="thematic_cluster" required></select>
+            </div>
+            <div>
+              <label for="secondary_thematic_cluster">Area tematica secondaria</label>
+              <select id="secondary_thematic_cluster" name="secondary_thematic_cluster"></select>
+            </div>
+          </div>
+          <p class="hint">La primaria pesa sempre più della secondaria. I match via keyword nel testo completo servono solo come livello trasversale.</p>
         </fieldset>
 
         <fieldset>
           <legend>4) Tipo di azione</legend>
-          <label for="action_type">Action type</label>
+          <label for="action_type">Action</label>
           <select id="action_type" name="action_type">
             <option value="">Qualsiasi</option>
-            <option value="IA">Innovation Action (IA)</option>
-            <option value="RIA">Research and Innovation Action (RIA)</option>
-            <option value="CSA">Coordination and Support Action (CSA)</option>
+            <option value="RIA">RIA</option>
+            <option value="IA">IA</option>
+            <option value="CSA">CSA</option>
             <option value="COFUND">COFUND</option>
-            <option value="OTHER">Altro / non specificato</option>
+            <option value="OTHER">Other</option>
           </select>
         </fieldset>
 
         <div class="actions">
-          <button type="submit" class="primary">Genera call</button>
+          <button type="submit" class="primary">Genera risultati</button>
           <button type="button" id="resetBtn" class="secondary">Pulisci</button>
         </div>
       </form>
-        </section>
+    </section>
 
-      <main class="results-shell">
-        <section id="resultsSection" class="card results-card hidden">
-      <h2 class="section-title">Risultati</h2>
-      <p class="section-subtitle">
-        Qui sotto trovi le call generate. I filtri tematici cambiano automaticamente in base all’area scelta nel questionario.
-      </p>
-
-      <div id="postFilters" class="toolbar hidden">
-        <div class="field">
-          <label for="live_topic_filter">Filtro sottotematico</label>
-          <select id="live_topic_filter">
-            <option value="">Tutti i sottotemi</option>
-          </select>
+    <section id="resultsSection" class="results hidden">
+      <div class="toolbar">
+        <div>
+          <label for="keyword_filter">Filtro keyword</label>
+          <input id="keyword_filter" type="text" placeholder="Es. hydrogen, robotics, cancer..." />
         </div>
-
-        <div class="field">
-          <label for="keyword_filter">Keyword libera</label>
-          <input id="keyword_filter" type="text" placeholder="Es. hydrogen, robotics, cancer, soil, cyber..." />
-        </div>
-      </div>
-
-      <div id="results"></div>
-
-      <div id="resultsFooter" class="results-footer hidden">
-        <div id="resultsProgress" class="results-progress"></div>
-        <div class="actions" style="margin-top:0; justify-content:center;">
+        <div style="flex:0 0 auto;min-width:unset">
           <button id="downloadResultsBtn" type="button" class="download">Scarica risultati CSV</button>
-          <button id="loadMoreBtn" type="button" class="load-more">Mostra altri</button>
         </div>
       </div>
-        </section>
-      </main>
-    </div>
+      <div id="results"></div>
+      <div id="resultsFooter" class="footer hidden">
+        <div id="resultsProgress" class="muted"></div>
+        <button id="loadMoreBtn" type="button" class="secondary">Mostra altri</button>
+      </div>
+    </section>
   </div>
-
-  <script>
-    (async function () {
-      const form = document.getElementById('surveyForm');
-      const resetBtn = document.getElementById('resetBtn');
-      const lastUpdatedEl = document.getElementById('lastUpdated');
-
-      const resultsSection = document.getElementById('resultsSection');
-      const resultsEl = document.getElementById('results');
-      const postFiltersEl = document.getElementById('postFilters');
-      const liveTopicFilterEl = document.getElementById('live_topic_filter');
-      const keywordFilterEl = document.getElementById('keyword_filter');
-      const resultsFooterEl = document.getElementById('resultsFooter');
-      const resultsProgressEl = document.getElementById('resultsProgress');
-      const loadMoreBtn = document.getElementById('loadMoreBtn');
-      const downloadResultsBtn = document.getElementById('downloadResultsBtn');
-
-      let CALLS = [];
-      let lastGeneratedResults = [];
-      let lastAnswers = null;
-      let visibleCount = 20;
-      const PAGE_SIZE = 20;
-      const SPECIAL_BASIC_RESEARCH_CATEGORY = 'Internships, fellowships & scholarships';
-      const SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS = ['internship','internships','fellowship','fellowships','msca','scholarship','scholarships'];
-
-      const MISSION_TO_CLUSTER = {
-        CANCER: '1',
-        CLIMA: '5',
-        SOIL: '6'
-      };
-
-      const CUMULATION_NOTES = {
-        "European Defence Fund": "Quadro separato. La cumulation con programmi civili è possibile solo nei limiti applicabili e senza doppio finanziamento delle stesse voci di costo.",
-        "default": "La coesistenza con Horizon Europe è possibile se non c’è sovrapposizione delle stesse voci di costo. Il cumulo non può superare i costi eleggibili totali."
-      };
-
-      const TOPIC_CATALOG = {
-        "Health & Life Sciences": {
-          label: "Health & Life Sciences",
-          topics: {
-            cancer: ['cancer','oncology','tumor','tumour','metastatic'],
-            biotech: ['biotech','biotechnology','biological','biomanufacturing','bioprocess'],
-            pharma: ['pharma','pharmaceutical','drug','therapeutic','therapy','medicinal'],
-            medtech: ['medical device','medical devices','diagnostic device','implant','wearable medical'],
-            diagnostics: ['diagnostic','diagnostics','screening','biomarker','assay'],
-            digital_health: ['digital health','telemedicine','remote monitoring','ehealth','health data'],
-            genomics: ['genomic','genomics','gene','genetic','dna','rna','sequencing'],
-            neuroscience: ['brain','neuro','neuroscience','alzheimer','parkinson','cognitive'],
-            public_health: ['public health','healthcare system','prevention','epidemiology','population health']
-          }
-        },
-
-        "Culture, Creativity & Inclusion": {
-          label: "Culture, Creativity & Inclusion",
-          topics: {
-            heritage: ['heritage','cultural heritage','museum','archive','archaeology'],
-            creative_industries: ['creative industry','creative industries','design','media','audiovisual'],
-            inclusion: ['inclusion','social inclusion','inequality','participation','accessibility'],
-            democracy: ['democracy','civic','governance','citizen engagement','institution'],
-            education_society: ['education','skills','lifelong learning','social innovation'],
-            migration: ['migration','migrant','refugee','diaspora']
-          }
-        },
-
-        "Security & Resilience": {
-          label: "Security & Resilience",
-          topics: {
-            cybersecurity: ['cybersecurity','cyber security','cyberattack','ransomware','security operations'],
-            disaster_resilience: ['disaster','resilience','emergency','crisis response','preparedness'],
-            border_security: ['border','customs','surveillance','cross-border control'],
-            civil_protection: ['civil protection','first responder','public safety','rescue'],
-            critical_infrastructure: ['critical infrastructure','infrastructure protection','risk assessment'],
-            defence_dual_use: ['dual-use','dual use','situational awareness','threat detection']
-          }
-        },
-
-        "Digital, Industry & Space": {
-          label: "Digital, Industry & Space",
-          topics: {
-            ai: ['artificial intelligence','machine learning','ai ','generative ai','foundation model'],
-            robotics: ['robot','robotics','cobot','autonomous system'],
-            semiconductors: ['semiconductor','chip','microelectronics','photonics','integrated circuit'],
-            quantum: ['quantum','qubit','quantum computing','quantum communication'],
-            data_cloud: ['cloud','edge','data space','data sharing','interoperability'],
-            manufacturing: ['manufacturing','factory','industry 4.0','industrial process','advanced manufacturing'],
-            materials: ['advanced material','materials','composite','alloy','nanomaterial'],
-            space: ['space','satellite','launcher','earth observation','copernicus','galileo']
-          }
-        },
-
-        "Climate, Energy & Mobility": {
-          label: "Climate, Energy & Mobility",
-          topics: {
-            climate: ['climate','climatic','adaptation','mitigation','net zero','carbon','co2','ghg','emission'],
-            energy: ['energy','energies','electricity','power system','grid','electrification'],
-            hydrogen: ['hydrogen','h2','fuel cell','electrolyser','electrolysis'],
-            batteries: ['battery','batteries','cell','bms','accumulator'],
-            mobility: ['mobility','vehicle','vehicles','automotive','ev','electric vehicle'],
-            transport: ['transport','rail','aviation','shipping','maritime','logistics'],
-            renewables: ['renewable','solar','pv','photovoltaic','wind','geothermal','hydropower','biofuel'],
-            storage: ['storage','energy storage','thermal storage','long-duration storage'],
-            smart_grids: ['smart grid','smart grids','demand response','grid flexibility'],
-            buildings: ['building','buildings','retrofit','renovation','built environment'],
-            cities: ['city','cities','urban','smart city','smart cities'],
-            circularity: ['circular economy','circularity','recycling','remanufacturing'],
-            water: ['water','wastewater','aquatic','coastal','marine']
-          }
-        },
-
-        "Food, Bioeconomy & Environment": {
-          label: "Food, Bioeconomy & Environment",
-          topics: {
-            agriculture: ['agriculture','farming','crop','precision farming','agronomy'],
-            food_systems: ['food system','food systems','food processing','nutrition','food supply'],
-            bioeconomy: ['bioeconomy','biobased','bio-based','biomass','biorefinery'],
-            biodiversity: ['biodiversity','ecosystem','habitat','species restoration'],
-            forestry: ['forest','forestry','wood','silviculture'],
-            soil: ['soil','regenerative soil','land restoration','soil health'],
-            environment: ['environment','pollution','air quality','contaminant'],
-            water_resources: ['water resource','river basin','groundwater','freshwater']
-          }
-        },
-
-        "Defence": {
-          label: "Defence",
-          topics: {
-            defence_systems: ['defence system','military system','battlefield','mission system'],
-            autonomy: ['autonomous','unmanned','uas','uav','drone'],
-            sensing: ['radar','sonar','sensor fusion','detection'],
-            secure_comm: ['secure communication','encrypted communication','tactical network'],
-            materials_protection: ['ballistic','armour','protective materials','survivability']
-          }
-        },
-
-        "SME, Entrepreneurship & Market Uptake": {
-          label: "SME, Entrepreneurship & Market Uptake",
-          topics: {
-            startup: ['startup','spin-off','venture','new business'],
-            scaleup: ['scale-up','scaleup','growth company','go-to-market'],
-            innovation_uptake: ['market uptake','commercialisation','commercialization','deployment'],
-            entrepreneurship: ['entrepreneurship','entrepreneur','business model'],
-            sme_support: ['sme','small business','innovation support','acceleration']
-          }
-        },
-
-        "External Action & International Cooperation": {
-          label: "External Action & International Cooperation",
-          topics: {
-            development: ['development cooperation','development','capacity building'],
-            global_health: ['global health','health systems strengthening'],
-            governance: ['governance','institutional reform','public administration'],
-            humanitarian: ['humanitarian','humanitarian aid','relief'],
-            international_partnerships: ['international cooperation','partnership','bilateral','multilateral']
-          }
-        },
-
-        "Climate-neutral & Smart Cities": {
-          label: "Climate-neutral & Smart Cities",
-          topics: {
-            smart_cities: ['smart city','smart cities','urban innovation'],
-            urban_mobility: ['urban mobility','public transport','shared mobility'],
-            urban_energy: ['district energy','urban energy','local energy system'],
-            buildings: ['building','buildings','renovation','energy efficient building'],
-            climate_neutrality: ['climate-neutral','climate neutral','net zero city','urban decarbonisation']
-          }
-        },
-
-        "Healthy Oceans, Seas, Coastal & Inland Waters": {
-          label: "Healthy Oceans, Seas, Coastal & Inland Waters",
-          topics: {
-            marine: ['marine','ocean','sea','maritime ecosystem'],
-            coastal: ['coastal','shoreline','coast'],
-            inland_waters: ['lake','river','inland waters','freshwater'],
-            blue_economy: ['blue economy','fisheries','aquaculture','marine biotechnology'],
-            pollution_water: ['water pollution','marine litter','microplastic','wastewater']
-          }
-        },
-
-        "Clean Aviation": {
-          label: "Clean Aviation",
-          topics: {
-            aircraft: ['aircraft','airframe','aerostructure'],
-            propulsion: ['propulsion','engine','hybrid-electric propulsion','electric propulsion'],
-            sustainable_fuels: ['sustainable aviation fuel','saf','aviation fuel'],
-            emissions: ['aviation emissions','low-emission aviation','zero-emission aircraft'],
-            airport_ops: ['airport','ground operation','air traffic']
-          }
-        },
-
-        "Internships, fellowships & scholarships": {
-          label: "Internships, fellowships & scholarships",
-          topics: {
-            career_opportunities: ['internship','internships','fellowship','fellowships','msca','scholarship','scholarships','doctoral programme','doctoral program','postdoctoral','post-doc','research training']
-          }
-        },
-
-        "Cross-cutting / Other": {
-          label: "Cross-cutting / Other",
-          topics: {
-            interdisciplinary: ['interdisciplinary','cross-sector','cross-cutting'],
-            policy: ['policy','regulation','standardisation','standardization'],
-            skills: ['skills','training','upskilling','reskilling'],
-            digital_transition: ['digital transition','digital transformation'],
-            green_transition: ['green transition','sustainability transition']
-          }
-        }
-      };
-
-      function escapeHtml(value) {
-        return String(value || '').replace(/[&<>"']/g, function (m) {
-          return {
-            '&':'&amp;',
-            '<':'&lt;',
-            '>':'&gt;',
-            '"':'&quot;',
-            "'":'&#39;'
-          }[m];
-        });
-      }
-
-      function prettyTopicLabel(key) {
-        return String(key || '')
-          .replace(/_/g, ' ')
-          .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
-      }
-
-      function normalizeAction(value) {
-        return String(value || '').trim().toUpperCase();
-      }
-
-      function normalizeCluster(value) {
-        if (value === null || value === undefined) return '';
-        const s = String(value).trim();
-        if (/^M-/.test(s) || MISSION_TO_CLUSTER[s]) return s;
-        const match = s.match(/(\d+)/);
-        return match ? match[1] : '';
-      }
-
-      function resolveCluster(value) {
-        return MISSION_TO_CLUSTER[value] || value;
-      }
-
-      function isHorizonProgramme(programme) {
-        return String(programme || '').toLowerCase().includes('horizon');
-      }
-
-      function projectEndIso(year, quarter) {
-        if (!year || !quarter) return '';
-        return {
-          Q1: year + '-03-31',
-          Q2: year + '-06-30',
-          Q3: year + '-09-30',
-          Q4: year + '-12-31'
-        }[quarter] || '';
-      }
-
-      function parseLooseDate(value) {
-        if (!value) return null;
-
-        const direct = new Date(value);
-        if (!isNaN(direct)) return direct;
-
-        const match = String(value).match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
-        if (!match) return null;
-
-        const months = {
-          january:0,february:1,march:2,april:3,may:4,june:5,
-          july:6,august:7,september:8,october:9,november:10,december:11
-        };
-
-        const monthIndex = months[match[2].toLowerCase()];
-        if (monthIndex === undefined) return null;
-
-        return new Date(Number(match[3]), monthIndex, Number(match[1]));
-      }
-
-      function fallbackIso(deadline) {
-        const parsed = parseLooseDate(deadline);
-        if (!parsed) return '';
-        return [
-          parsed.getFullYear(),
-          String(parsed.getMonth() + 1).padStart(2, '0'),
-          String(parsed.getDate()).padStart(2, '0')
-        ].join('-');
-      }
-
-      function hasSpecialBasicResearchTitle(call) {
-        const title = String((call && call.name) || '').toLowerCase();
-        return SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS.some(function (keyword) {
-          return title.includes(keyword);
-        });
-      }
-
-      function isSpecialBasicResearchCategory(clusterName) {
-        return String(clusterName || '').trim() === SPECIAL_BASIC_RESEARCH_CATEGORY;
-      }
-
-      function getCumulationNote(programme) {
-        if (!programme) return CUMULATION_NOTES.default;
-        const p = String(programme).toLowerCase();
-
-        for (const key in CUMULATION_NOTES) {
-          if (key === 'default') continue;
-          if (p.includes(key.toLowerCase())) return CUMULATION_NOTES[key];
-        }
-
-        return CUMULATION_NOTES.default;
-      }
-
-      function buildSearchText(call) {
-        return [
-          call.name,
-          call.programme,
-          call.thematic_cluster,
-          call.cluster_label,
-          call.action,
-          call.description,
-          call.objective,
-          call.scope,
-          call.destination,
-          call.topic,
-          call.full_text
-        ].filter(Boolean).join(' ').toLowerCase();
-      }
-
-      function getTopicMapForCluster(clusterName) {
-        const entry = TOPIC_CATALOG[clusterName];
-        return entry ? entry.topics : {};
-      }
-
-      function getKeywordsForThematic(clusterName) {
-        if (isSpecialBasicResearchCategory(clusterName)) {
-          return SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS.slice();
-        }
-        const topicMap = getTopicMapForCluster(clusterName);
-        const keywords = [];
-        for (const topicKey in topicMap) {
-          (topicMap[topicKey] || []).forEach(function (keyword) {
-            if (!keywords.includes(keyword)) keywords.push(keyword);
-          });
-        }
-        return keywords;
-      }
-
-      function escapeRegex(value) {
-        return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      }
-
-      function keywordPattern(keyword) {
-        const escaped = escapeRegex(String(keyword).toLowerCase().trim()).replace(/\s+/g, '\\s+');
-        return new RegExp('(^|[^a-z0-9])' + escaped + '(?=[^a-z0-9]|$)', 'i');
-      }
-
-      function keywordMatchesText(text, keyword) {
-        if (!text || !keyword) return false;
-        return keywordPattern(keyword).test(String(text).toLowerCase());
-      }
-
-      function getThematicKeywordHits(call, clusterName) {
-        if (!clusterName) return [];
-        if (isSpecialBasicResearchCategory(clusterName)) {
-          return hasSpecialBasicResearchTitle(call) ? SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS.slice(0, 1) : [];
-        }
-        const searchText = call._searchText || '';
-        return getKeywordsForThematic(clusterName).filter(function (keyword) {
-          return keywordMatchesText(searchText, keyword);
-        });
-      }
-
-      function hasThematicKeywords(call, clusterName) {
-        return getThematicKeywordHits(call, clusterName).length > 0;
-      }
-
-      function getAssignedThematic(call) {
-        const out = [];
-
-        if (call.thematic_cluster && !out.includes(call.thematic_cluster)) {
-          out.push(call.thematic_cluster);
-        }
-
-        return out;
-      }
-
-      function isAssignedToSelection(call, thematic) {
-        if (!thematic) return false;
-        if (isSpecialBasicResearchCategory(thematic)) {
-          return !!call._is_special_basic_research;
-        }
-        return (call._assigned_thematic || []).includes(thematic);
-      }
-
-      function getKeywordMatchedThematic(call) {
-        const out = [];
-
-        (call._topics || []).forEach(function (topicKey) {
-          for (const clusterKey in TOPIC_CATALOG) {
-            const genericMap = TOPIC_CATALOG[clusterKey].topics;
-            if (genericMap[topicKey] && !out.includes(clusterKey)) out.push(clusterKey);
-          }
-        });
-
-        if (hasSpecialBasicResearchTitle(call) && !out.includes(SPECIAL_BASIC_RESEARCH_CATEGORY)) {
-          out.push(SPECIAL_BASIC_RESEARCH_CATEGORY);
-        }
-
-        return out;
-      }
-
-      function inferTopics(call) {
-        const text = buildSearchText(call);
-        const topics = [];
-        const clusterName = String(call.thematic_cluster || '').trim();
-
-        const exactTopicMap = getTopicMapForCluster(clusterName);
-
-        for (const topicKey in exactTopicMap) {
-          const keywords = exactTopicMap[topicKey];
-          const found = keywords.some(function (keyword) {
-            return keywordMatchesText(text, keyword);
-          });
-          if (found && !topics.includes(topicKey)) topics.push(topicKey);
-        }
-
-        for (const clusterKey in TOPIC_CATALOG) {
-          const genericMap = TOPIC_CATALOG[clusterKey].topics;
-          for (const topicKey in genericMap) {
-            const keywords = genericMap[topicKey];
-            const found = keywords.some(function (keyword) {
-              return keywordMatchesText(text, keyword);
-            });
-            if (found && !topics.includes(topicKey)) topics.push(topicKey);
-          }
-        }
-
-        return topics;
-      }
-
-      function enrichCall(call) {
-        const searchText = buildSearchText(call) + ' ' + String(call.full_text || '').toLowerCase();
-        const enriched = {
-          ...call,
-          _official_norm: normalizeCluster(call.cluster_num),
-          _thematic_norm: String(call.thematic_cluster || '').trim(),
-          _action_norm: normalizeAction(call.action),
-          _deadline_norm: call.deadline_iso || fallbackIso(call.deadline),
-          _is_horizon: isHorizonProgramme(call.programme),
-          _topics: inferTopics({ ...call, full_text: call.full_text }),
-          _searchText: searchText,
-          _is_special_basic_research: hasSpecialBasicResearchTitle(call)
-        };
-        enriched._assigned_thematic = getAssignedThematic(enriched);
-        enriched._keyword_thematic = getKeywordMatchedThematic(enriched);
-        enriched._multi_thematic = enriched._assigned_thematic.slice();
-        if (enriched._is_special_basic_research && !enriched._multi_thematic.includes(SPECIAL_BASIC_RESEARCH_CATEGORY)) {
-          enriched._multi_thematic.push(SPECIAL_BASIC_RESEARCH_CATEGORY);
-        }
-        return enriched;
-      }
-
-      function getPriorityBucket(call, answers) {
-        const wantedPrimary = answers.thematic_cluster || '';
-        const wantedSecondary = answers.secondary_thematic_cluster || '';
-
-        const isPrimaryByCluster = isAssignedToSelection(call, wantedPrimary);
-        const isSecondaryByCluster = isAssignedToSelection(call, wantedSecondary);
-        const hasPrimaryKeywords = wantedPrimary && hasThematicKeywords(call, wantedPrimary);
-        const hasSecondaryKeywords = wantedSecondary && hasThematicKeywords(call, wantedSecondary);
-        const otherCluster = !isPrimaryByCluster && !isSecondaryByCluster;
-
-        if (wantedPrimary && wantedSecondary) {
-          if (isPrimaryByCluster && hasSecondaryKeywords) return 1;
-          if (isPrimaryByCluster) return 2;
-          if (isSecondaryByCluster && hasPrimaryKeywords) return 3;
-          if (otherCluster && hasPrimaryKeywords && hasSecondaryKeywords) return 4;
-          return 9;
-        }
-
-        if (wantedPrimary) {
-          if (isPrimaryByCluster) return 1;
-          if (hasPrimaryKeywords) return 2;
-        }
-
-        return 9;
-      }
-
-      function scoreCall(call, answers) {
-        let score = 0;
-
-        const wantedPrimary = answers.thematic_cluster || '';
-        const wantedSecondary = answers.secondary_thematic_cluster || '';
-        const wantedOfficial = normalizeCluster(answers.official_cluster);
-        const wantedAction = answers.action_type || '';
-        const projectEnd = projectEndIso(answers.closure_year, answers.closure_quarter);
-
-        const isPrimaryByCluster = isAssignedToSelection(call, wantedPrimary);
-        const isSecondaryByCluster = isAssignedToSelection(call, wantedSecondary);
-        const hasPrimaryKeywords = wantedPrimary && hasThematicKeywords(call, wantedPrimary);
-        const hasSecondaryKeywords = wantedSecondary && hasThematicKeywords(call, wantedSecondary);
-
-        const bucket = getPriorityBucket(call, answers);
-
-        if (bucket === 1) score += 1000;
-        else if (bucket === 2) score += 800;
-        else if (bucket === 3) score += 600;
-        else if (bucket === 4) score += 400;
-        else if (isSecondaryByCluster) score += 150;
-        else if (hasPrimaryKeywords) score += 120;
-        else if (hasSecondaryKeywords) score += 60;
-
-        if (wantedOfficial) {
-          const wantedResolved = resolveCluster(wantedOfficial);
-          const callResolved = resolveCluster(call._official_norm);
-          if (wantedResolved === callResolved) score += 40;
-        }
-
-        if (wantedAction && call._is_horizon) {
-          if (wantedAction === 'OTHER') {
-            if (!call._action_norm || !['IA','RIA','CSA','COFUND'].includes(call._action_norm)) score += 20;
-          } else if (call._action_norm === wantedAction) {
-            score += 30;
-          }
-        }
-
-        if (answers.project_nature === 'basic') {
-          if (call._action_norm === 'RIA') score += 18;
-          if (call._action_norm === 'CSA') score += 8;
-          if (call._is_special_basic_research) score += 40;
-        } else if (answers.project_nature === 'applied') {
-          if (call._action_norm === 'RIA') score += 12;
-          if (call._action_norm === 'IA') score += 12;
-        } else if (answers.project_nature === 'industrial') {
-          if (call._action_norm === 'IA') score += 18;
-        }
-
-        if (projectEnd && call._deadline_norm && call._deadline_norm > projectEnd) score += 15;
-        if (call.is_mission) score += 8;
-
-        return score;
-      }
-
-      function applyBaseFilters(calls, answers) {
-        const wantedPrimary = answers.thematic_cluster || '';
-        const wantedSecondary = answers.secondary_thematic_cluster || '';
-        const wantedOfficial = normalizeCluster(answers.official_cluster);
-        const wantedAction = answers.action_type || '';
-        const projectEnd = projectEndIso(answers.closure_year, answers.closure_quarter);
-
-        let out = calls.map(enrichCall);
-
-        if (wantedOfficial) {
-          const resolvedWanted = resolveCluster(wantedOfficial);
-          out = out.filter(function (call) {
-            return resolveCluster(call._official_norm) === resolvedWanted;
-          });
-        }
-
-        if (wantedAction) {
-          out = out.filter(function (call) {
-            if (!call._is_horizon) return true;
-            if (wantedAction === 'OTHER') {
-              return !call._action_norm || !['IA','RIA','CSA','COFUND'].includes(call._action_norm);
-            }
-            return call._action_norm === wantedAction;
-          });
-        }
-
-        if (projectEnd) {
-          out = out.filter(function (call) {
-            return call._deadline_norm && call._deadline_norm > projectEnd;
-          });
-        }
-
-        out.forEach(function (call) {
-          call._primary_keyword_hits = wantedPrimary ? getThematicKeywordHits(call, wantedPrimary) : [];
-          call._secondary_keyword_hits = wantedSecondary ? getThematicKeywordHits(call, wantedSecondary) : [];
-          call._has_primary_keywords = call._primary_keyword_hits.length > 0;
-          call._has_secondary_keywords = call._secondary_keyword_hits.length > 0;
-          call._priority_bucket = getPriorityBucket(call, answers);
-          call._score = scoreCall(call, answers);
-        });
-
-        if (wantedPrimary && wantedSecondary) {
-          out = out.filter(function (call) {
-            const isPrimaryByCluster = isAssignedToSelection(call, wantedPrimary);
-            const isSecondaryByCluster = isAssignedToSelection(call, wantedSecondary);
-            const otherCluster = !isPrimaryByCluster && !isSecondaryByCluster;
-            const allowSpecialCrossMatch = isSpecialBasicResearchCategory(wantedPrimary) || isSpecialBasicResearchCategory(wantedSecondary);
-            const validOtherCluster = otherCluster && call._has_primary_keywords && call._has_secondary_keywords && (allowSpecialCrossMatch || !call._is_special_basic_research);
-            return (isPrimaryByCluster && call._has_secondary_keywords)
-              || isPrimaryByCluster
-              || (isSecondaryByCluster && call._has_primary_keywords)
-              || validOtherCluster;
-          });
-        } else if (wantedPrimary) {
-          out = out.filter(function (call) {
-            return isAssignedToSelection(call, wantedPrimary) || (call._has_primary_keywords && (!call._is_special_basic_research || isSpecialBasicResearchCategory(wantedPrimary)));
-          });
-        }
-
-        return out
-          .filter(function (call) {
-            return call._score >= 20;
-          })
-          .sort(function (a, b) {
-            if ((a._priority_bucket || 9) !== (b._priority_bucket || 9)) return (a._priority_bucket || 9) - (b._priority_bucket || 9);
-            if (b._score !== a._score) return b._score - a._score;
-            return String(a._deadline_norm || '').localeCompare(String(b._deadline_norm || ''));
-          });
-      }
-
-      function populateDynamicTopicFilter(clusterName, results) {
-        const topicMap = getTopicMapForCluster(clusterName);
-        const availableTopics = new Set();
-
-        results.forEach(function (call) {
-          (call._topics || []).forEach(function (topic) {
-            if (topicMap[topic]) availableTopics.add(topic);
-          });
-        });
-
-        let options = '<option value="">Tutti i sottotemi</option>';
-
-        Object.keys(topicMap).forEach(function (topicKey) {
-          if (availableTopics.has(topicKey)) {
-            options += '<option value="' + escapeHtml(topicKey) + '">' + escapeHtml(prettyTopicLabel(topicKey)) + '</option>';
-          }
-        });
-
-        if (options === '<option value="">Tutti i sottotemi</option>') {
-          Object.keys(topicMap).forEach(function (topicKey) {
-            options += '<option value="' + escapeHtml(topicKey) + '">' + escapeHtml(prettyTopicLabel(topicKey)) + '</option>';
-          });
-        }
-
-        liveTopicFilterEl.innerHTML = options;
-      }
-
-      function applyLiveFilters(results) {
-        const topic = liveTopicFilterEl.value.trim();
-        const keyword = keywordFilterEl.value.trim().toLowerCase();
-
-        return results.filter(function (call) {
-          const okTopic = !topic || call._topics.includes(topic);
-          const okKeyword = !keyword || call._searchText.includes(keyword);
-          return okTopic && okKeyword;
-        });
-      }
-
-
-      function toCsvValue(value) {
-        const safe = String(value == null ? '' : value).replace(/\r?\n|\r/g, ' ').trim();
-        return '"' + safe.replace(/"/g, '""') + '"';
-      }
-
-      function downloadTextFile(filename, content, mimeType) {
-        const blob = new Blob([content], { type: mimeType + ';charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(function () { URL.revokeObjectURL(url); }, 0);
-      }
-
-      function buildCallsCsv(results) {
-        const headers = [
-          'name','programme','thematic_cluster','cluster_label','action','opening','deadline','budget',
-          'is_mission','topics','cumulation_note','url'
-        ];
-
-        const rows = results.map(function (call) {
-          return [
-            call.name || '',
-            call.programme || '',
-            call.thematic_cluster || '',
-            call.cluster_label || '',
-            call.action || '',
-            call.opening || '',
-            call.deadline || '',
-            call.budget || '',
-            call.is_mission ? 'yes' : 'no',
-            (call._topics || []).map(prettyTopicLabel).join(' | '),
-            call._is_horizon ? '' : getCumulationNote(call.programme),
-            call.url || ''
-          ];
-        });
-
-        return [headers.map(toCsvValue).join(',' )]
-          .concat(rows.map(function (row) {
-            return row.map(toCsvValue).join(',');
-          }))
-          .join('\n');
-      }
-
-      function renderSummary(answers) {
-        const pills = [
-          'Chiusura: ' + answers.closure_year + ' ' + answers.closure_quarter,
-          'Natura: ' + (answers.project_nature || 'Qualsiasi'),
-          'Cluster principale: ' + (answers.thematic_cluster || '—'),
-          'Cluster secondario: ' + (answers.secondary_thematic_cluster || '—'),
-          'Cluster HE: ' + (answers.official_cluster || 'Qualsiasi'),
-          'Action: ' + (answers.action_type || 'Qualsiasi')
-        ];
-
-        return (
-          '<div class="summary">' +
-          pills.map(function (item) {
-            return '<span class="pill">' + escapeHtml(item) + '</span>';
-          }).join('') +
-          '</div>'
-        );
-      }
-
-      function renderCalls(filtered, answers) {
-        const liveFiltered = applyLiveFilters(filtered);
-        const visibleResults = liveFiltered.slice(0, visibleCount);
-
-        let html = '';
-        html += renderSummary(answers);
-        html += '<div class="meta-box">I sottotemi del menu sono adattati automaticamente all’area tematica selezionata nel questionario.</div>';
-        html += '<div class="stats">Call trovate: ' + liveFiltered.length + ' <span class="muted">totali dopo i filtri</span></div>';
-
-        if (!liveFiltered.length) {
-          html += '<div class="empty">Nessuna call corrisponde ai filtri attivi.</div>';
-          resultsEl.innerHTML = html;
-          updateLoadMore(liveFiltered.length);
-          return;
-        }
-
-        visibleResults.forEach(function (call) {
-          const meta = [
-            call.programme ? 'Programme: ' + call.programme : '',
-            call.thematic_cluster ? 'Thematic area: ' + call.thematic_cluster : '',
-            call.cluster_label ? 'Horizon area: ' + call.cluster_label : '',
-            call.action ? 'Action: ' + call.action : '',
-            call.opening ? 'Opening: ' + call.opening : '',
-            call.deadline ? 'Deadline: ' + call.deadline : '',
-            call.budget ? 'Budget: ' + call.budget : ''
-          ].filter(Boolean).join(' · ');
-
-          const missionBadge = call.is_mission
-            ? '<span class="badge mission">Mission</span>'
-            : '';
-
-          const topicsHtml = (function () {
-            const tags = [];
-            if (call._is_special_basic_research) {
-              tags.push('<span class="topic-tag">Internships / fellowships / scholarships</span>');
-            }
-            (call._topics || []).forEach(function (topic) {
-              tags.push('<span class="topic-tag">' + escapeHtml(prettyTopicLabel(topic)) + '</span>');
-            });
-            return tags.length ? '<div class="topic-tags">' + tags.join('') + '</div>' : '';
-          })();
-
-          const cumulationHtml = call._is_horizon
-            ? ''
-            : '<div class="cumulation-note"><strong>Cumulation con Horizon Europe:</strong> ' + escapeHtml(getCumulationNote(call.programme)) + '</div>';
-
-          const urlHtml = call.url
-            ? '<div class="meta">Link: <a href="' + encodeURI(call.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(call.url) + '</a></div>'
-            : '';
-
-          html +=
-            '<article class="call ' + (call.is_mission ? 'mission' : '') + '">' +
-              '<h3>' + escapeHtml(call.name || '(senza nome)') + ' ' + missionBadge + '</h3>' +
-              '<div class="meta">' + escapeHtml(meta) + '</div>' +
-              topicsHtml +
-              cumulationHtml +
-              urlHtml +
-            '</article>';
-        });
-
-        resultsEl.innerHTML = html;
-        updateLoadMore(liveFiltered.length);
-      }
-
-      function updateLoadMore(totalVisiblePool) {
-        if (downloadResultsBtn) downloadResultsBtn.disabled = totalVisiblePool <= 0;
-
-        if (totalVisiblePool <= 0) {
-          resultsFooterEl.classList.add('hidden');
-          return;
-        }
-
-        const shown = Math.min(visibleCount, totalVisiblePool);
-        resultsProgressEl.textContent = 'Stai vedendo ' + shown + ' risultati su ' + totalVisiblePool + '.';
-
-        if (shown >= totalVisiblePool) {
-          loadMoreBtn.classList.add('hidden');
-        } else {
-          loadMoreBtn.classList.remove('hidden');
-        }
-
-        resultsFooterEl.classList.remove('hidden');
-      }
-
-      async function loadCalls() {
-        if (Array.isArray(window.CALLS_DATA)) return window.CALLS_DATA;
-
-        try {
-          const response = await fetch('./calls.json', { cache:'no-store' });
-          const data = await response.json();
-
-          if (data.generated) {
-            const d = new Date(data.generated);
-            const stamp =
-              d.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' }) +
-              ' ' +
-              d.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
-
-            lastUpdatedEl.textContent = 'Dati aggiornati al: ' + stamp + ' UTC';
-            lastUpdatedEl.classList.remove('hidden');
-          }
-
-          return Array.isArray(data.calls) ? data.calls : [];
-        } catch (error) {
-          console.error(error);
-          return [];
-        }
-      }
-
-      function getAnswers() {
-        const fd = new FormData(form);
-        return {
-          closure_year: fd.get('closure_year'),
-          closure_quarter: fd.get('closure_quarter'),
-          project_nature: fd.get('project_nature'),
-          thematic_cluster: fd.get('thematic_cluster'),
-          secondary_thematic_cluster: fd.get('secondary_thematic_cluster'),
-          official_cluster: fd.get('official_cluster'),
-          action_type: fd.get('action_type')
-        };
-      }
-
-      function showResultsArea() {
-        resultsSection.classList.remove('hidden');
-        postFiltersEl.classList.remove('hidden');
-      }
-
-      function hideResultsArea() {
-        resultsSection.classList.add('hidden');
-        postFiltersEl.classList.add('hidden');
-        resultsFooterEl.classList.add('hidden');
-        loadMoreBtn.classList.remove('hidden');
-        if (downloadResultsBtn) downloadResultsBtn.disabled = true;
-        resultsEl.innerHTML = '';
-      }
-
-      function regenerateLiveFilters(resetPagination) {
-        if (!lastAnswers) return;
-        if (resetPagination) visibleCount = PAGE_SIZE;
-        renderCalls(lastGeneratedResults, lastAnswers);
-      }
-
-      form.addEventListener('submit', function (event) {
-        event.preventDefault();
-
-        if (!CALLS.length) {
-          showResultsArea();
-          resultsEl.innerHTML = '<div class="error">Non riesco a caricare <code>calls.json</code>.</div>';
-          resultsFooterEl.classList.add('hidden');
-          resultsSection.scrollIntoView({ behavior:'smooth', block:'start' });
-          return;
-        }
-
-        lastAnswers = getAnswers();
-        lastGeneratedResults = applyBaseFilters(CALLS, lastAnswers);
-        visibleCount = PAGE_SIZE;
-
-        populateDynamicTopicFilter(lastAnswers.thematic_cluster, lastGeneratedResults);
-        liveTopicFilterEl.value = '';
-        keywordFilterEl.value = '';
-
-        showResultsArea();
-        renderCalls(lastGeneratedResults, lastAnswers);
-        resultsSection.scrollIntoView({ behavior:'smooth', block:'start' });
+<script>
+(() => {
+  const PAGE_SIZE = 25;
+  const SPECIAL = 'Internships, fellowships & scholarships';
+  const THEMATIC_OPTIONS = [
+    'Health & Life Sciences','Culture, Creativity & Inclusion','Security & Resilience','Digital, Industry & Space',
+    'Climate, Energy & Mobility','Food, Bioeconomy & Environment','Defence','SME, Entrepreneurship & Market Uptake',
+    'External Action & International Cooperation','Climate-neutral & Smart Cities','Healthy Oceans, Seas, Coastal & Inland Waters',
+    'Clean Aviation','Cross-cutting / Other', SPECIAL
+  ];
+  const TITLE_SPECIAL_KEYWORDS = ['internship','internships','fellowship','fellowships','msca','scholarship','scholarships'];
+  const KEYWORDS = {
+    'Health & Life Sciences': ['health','biotech','biotechnology','pharma','pharmaceutical','therapeutic','medical','diagnostic','genomic','genomics','dna','rna','public health','clinical'],
+    'Culture, Creativity & Inclusion': ['culture','creative','heritage','museum','archive','inclusion','social inclusion','democracy','education','skills'],
+    'Security & Resilience': ['security','cybersecurity','cyber security','disaster resilience','emergency','critical infrastructure','civil protection','border security'],
+    'Digital, Industry & Space': ['digital','artificial intelligence','machine learning','generative ai','data space','data sharing','cloud','edge','software','semiconductor','microelectronics','quantum','robotics','space','satellite'],
+    'Climate, Energy & Mobility': ['climate','adaptation','mitigation','energy','electricity','power system','grid','hydrogen','battery','batteries','mobility','transport','renewable','solar','photovoltaic','wind','storage','smart grid','building renovation','built environment','city','cities'],
+    'Food, Bioeconomy & Environment': ['agriculture','farming','crop','food system','bioeconomy','biodiversity','forestry','soil','water resources','environment','ecosystem','marine'],
+    'Defence': ['defence','defense','dual-use','dual use','military'],
+    'SME, Entrepreneurship & Market Uptake': ['sme','startup','entrepreneurship','venture','scale-up','market uptake','innovation uptake'],
+    'External Action & International Cooperation': ['international cooperation','development cooperation','global south','partner countries','external action'],
+    'Climate-neutral & Smart Cities': ['smart city','smart cities','climate-neutral city','urban transition','city mission'],
+    'Healthy Oceans, Seas, Coastal & Inland Waters': ['ocean','oceans','sea','seas','coastal','inland waters','marine','blue economy'],
+    'Clean Aviation': ['aviation','aircraft','aeronautics','sustainable aviation'],
+    'Cross-cutting / Other': ['interdisciplinary','cross-cutting','widening','research infrastructure','eosc'],
+    [SPECIAL]: TITLE_SPECIAL_KEYWORDS
+  };
+
+  const form = document.getElementById('surveyForm');
+  const resetBtn = document.getElementById('resetBtn');
+  const resultsSection = document.getElementById('resultsSection');
+  const resultsEl = document.getElementById('results');
+  const resultsFooterEl = document.getElementById('resultsFooter');
+  const resultsProgressEl = document.getElementById('resultsProgress');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  const downloadResultsBtn = document.getElementById('downloadResultsBtn');
+  const keywordFilterEl = document.getElementById('keyword_filter');
+  const lastUpdatedEl = document.getElementById('lastUpdated');
+  const primaryEl = document.getElementById('thematic_cluster');
+  const secondaryEl = document.getElementById('secondary_thematic_cluster');
+
+  let CALLS = [];
+  let visibleCount = PAGE_SIZE;
+  let lastAnswers = null;
+  let lastGeneratedResults = [];
+
+  function esc(s){ return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function norm(s){ return String(s || '').trim(); }
+  function lower(s){ return String(s || '').toLowerCase(); }
+  function projectEndIso(y,q){ return {Q1:`${y}-03-31`,Q2:`${y}-06-30`,Q3:`${y}-09-30`,Q4:`${y}-12-31`}[q] || ''; }
+  function normalizeAction(v){ const s=lower(v); if(s.includes('research and innovation action')) return 'RIA'; if(s.includes('innovation action')) return 'IA'; if(s.includes('coordination and support')) return 'CSA'; if(s.includes('cofund')) return 'COFUND'; return String(v||'').toUpperCase(); }
+  function textForSearch(call){ return lower([call.full_text, call.name, call.programme, call.cluster_label, call.thematic_cluster, call.action].filter(Boolean).join(' ')); }
+  function titleHasSpecial(title){ const t=lower(title); return TITLE_SPECIAL_KEYWORDS.some(k => new RegExp(`(^|[^a-z])${escapeRegExp(k)}([^a-z]|$)`, 'i').test(t)); }
+  function escapeRegExp(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function keywordHits(text, thematic){
+    const keywords = KEYWORDS[thematic] || [];
+    const hits = [];
+    keywords.forEach(k => {
+      const pattern = new RegExp(`(^|[^a-z])${escapeRegExp(lower(k))}([^a-z]|$)`, 'i');
+      if (pattern.test(text)) hits.push(k);
+    });
+    return [...new Set(hits)];
+  }
+  function enrichCall(raw){
+    const call = {...raw};
+    call._assigned = norm(call.thematic_cluster);
+    call._action_norm = normalizeAction(call.action);
+    call._deadline_norm = call.deadline_iso || '';
+    call._search = textForSearch(call);
+    call._special = Boolean(call.is_special_basic_research || titleHasSpecial(call.name));
+    call._keyword_hits = call.keyword_hits && typeof call.keyword_hits === 'object' ? call.keyword_hits : {};
+    if (!Object.keys(call._keyword_hits).length) {
+      THEMATIC_OPTIONS.forEach(t => {
+        if (t === SPECIAL) return;
+        const hits = keywordHits(call._search, t);
+        if (hits.length) call._keyword_hits[t] = hits;
       });
+      if (call._special) call._keyword_hits[SPECIAL] = TITLE_SPECIAL_KEYWORDS.filter(k => lower(call.name).includes(k));
+    }
+    return call;
+  }
+  function isAssignedTo(call, thematic){
+    if (!thematic) return false;
+    if (thematic === SPECIAL) return !!call._special;
+    return norm(call._assigned) === thematic;
+  }
+  function hitsFor(call, thematic){
+    if (!thematic) return [];
+    if (thematic === SPECIAL) return call._special ? ['title match'] : [];
+    return Array.isArray(call._keyword_hits[thematic]) ? call._keyword_hits[thematic] : keywordHits(call._search, thematic);
+  }
+  function scoreNature(call, nature){
+    if (!nature) return 0;
+    const a = call._action_norm;
+    if (nature === 'basic') return (a === 'RIA' ? 14 : 0) + (a === 'CSA' ? 6 : 0) + (call._special ? 8 : 0);
+    if (nature === 'applied') return (a === 'RIA' ? 9 : 0) + (a === 'IA' ? 9 : 0);
+    if (nature === 'industrial') return (a === 'IA' ? 14 : 0);
+    return 0;
+  }
+  function bucketAndScore(call, answers){
+    const primary = answers.thematic_cluster || '';
+    const secondary = answers.secondary_thematic_cluster || '';
+    const primaryAssigned = isAssignedTo(call, primary);
+    const secondaryAssigned = secondary ? isAssignedTo(call, secondary) : false;
+    const primaryHits = hitsFor(call, primary);
+    const secondaryHits = secondary ? hitsFor(call, secondary) : [];
+    const otherAssigned = call._assigned && call._assigned !== primary && call._assigned !== secondary;
 
-      liveTopicFilterEl.addEventListener('change', function () {
-        regenerateLiveFilters(true);
-      });
+    let bucket = 99;
+    if (!secondary) {
+      if (primaryAssigned) bucket = 1;
+      else if (primaryHits.length) bucket = 2;
+    } else {
+      if (primaryAssigned && secondaryHits.length) bucket = 1;
+      else if (primaryAssigned) bucket = 2;
+      else if (secondaryAssigned && primaryHits.length) bucket = 3;
+      else if (otherAssigned && primaryHits.length && secondaryHits.length) bucket = 4;
+    }
+    if (bucket === 99) return null;
 
-      keywordFilterEl.addEventListener('input', function () {
-        regenerateLiveFilters(true);
-      });
+    let score = 1000 - bucket * 100;
+    score += primaryAssigned ? 40 : 0;
+    score += secondaryAssigned ? 18 : 0;
+    score += Math.min(primaryHits.length, 4) * 6;
+    score += Math.min(secondaryHits.length, 4) * 6;
+    score += scoreNature(call, answers.project_nature || '');
+    if ((answers.action_type || '') && answers.action_type !== 'OTHER') score += (call._action_norm === answers.action_type ? 10 : -50);
+    if ((answers.action_type || '') === 'OTHER') score += (!['RIA','IA','CSA','COFUND'].includes(call._action_norm) ? 8 : -50);
+    if (call._special && (primary === SPECIAL || secondary === SPECIAL)) score += 16;
 
-      loadMoreBtn.addEventListener('click', function () {
-        visibleCount += PAGE_SIZE;
-        regenerateLiveFilters(false);
-      });
+    return {bucket, score, primaryAssigned, secondaryAssigned, primaryHits, secondaryHits};
+  }
+  function applyFilters(calls, answers){
+    const projectEnd = projectEndIso(answers.closure_year, answers.closure_quarter);
+    return calls.map(enrichCall).map(call => {
+      if (projectEnd && call._deadline_norm && call._deadline_norm <= projectEnd) return null;
+      const bs = bucketAndScore(call, answers);
+      if (!bs) return null;
+      return {...call, _bucket: bs.bucket, _score: bs.score, _primaryAssigned: bs.primaryAssigned, _secondaryAssigned: bs.secondaryAssigned, _primaryHits: bs.primaryHits, _secondaryHits: bs.secondaryHits};
+    }).filter(Boolean).sort((a,b) => {
+      if (a._bucket !== b._bucket) return a._bucket - b._bucket;
+      if (b._score !== a._score) return b._score - a._score;
+      return String(a._deadline_norm || '').localeCompare(String(b._deadline_norm || ''));
+    });
+  }
+  function applyLiveKeyword(results){
+    const q = lower(keywordFilterEl.value || '').trim();
+    if (!q) return results;
+    return results.filter(c => c._search.includes(q));
+  }
+  function bucketLabel(call){
+    if (call._bucket === 1) return 'Match primario + secondario';
+    if (call._bucket === 2) return 'Match primario';
+    if (call._bucket === 3) return 'Match secondario con keyword primaria';
+    if (call._bucket === 4) return 'Match trasversale';
+    return 'Match';
+  }
+  function renderSummary(a){
+    return '<div class="summary">' + [
+      `Chiusura: ${esc(a.closure_year)} ${esc(a.closure_quarter)}`,
+      `Natura: ${esc(a.project_nature || 'Qualsiasi')}`,
+      `Primaria: ${esc(a.thematic_cluster || '—')}`,
+      `Secondaria: ${esc(a.secondary_thematic_cluster || '—')}`,
+      `Action: ${esc(a.action_type || 'Qualsiasi')}`
+    ].map(x => `<span class="pill">${x}</span>`).join('') + '</div>';
+  }
+  function renderCalls(){
+    const filtered = applyLiveKeyword(lastGeneratedResults);
+    const visible = filtered.slice(0, visibleCount);
+    let html = '';
+    html += renderSummary(lastAnswers);
+    html += `<div class="stats">Call trovate: ${filtered.length}</div>`;
+    if (!filtered.length) {
+      resultsEl.innerHTML = html + '<div class="empty">Nessuna call corrisponde ai filtri attivi.</div>';
+      resultsFooterEl.classList.add('hidden');
+      return;
+    }
+    visible.forEach(call => {
+      const meta = [
+        call.programme ? `Programme: ${esc(call.programme)}` : '',
+        call.thematic_cluster ? `Thematic area: ${esc(call.thematic_cluster)}` : '',
+        call.cluster_label ? `Horizon area: ${esc(call.cluster_label)}` : '',
+        call.action ? `Action: ${esc(call.action)}` : '',
+        call.opening ? `Opening: ${esc(call.opening)}` : '',
+        call.deadline ? `Deadline: ${esc(call.deadline)}` : ''
+      ].filter(Boolean).join(' · ');
+      const badges = [`<span class="badge">${bucketLabel(call)}</span>`];
+      if (call._primaryAssigned) badges.push('<span class="badge">cluster/programme primario</span>');
+      if (call._secondaryAssigned) badges.push('<span class="badge">cluster/programme secondario</span>');
+      if (call._special) badges.push('<span class="badge">internships / fellowships</span>');
+      const tags = [];
+      call._primaryHits.forEach(t => tags.push(`<span class="tag">${esc(t)}</span>`));
+      call._secondaryHits.forEach(t => tags.push(`<span class="tag">${esc(t)}</span>`));
+      html += `<article class="call"><h3>${esc(call.name || '(senza nome)')}</h3><div class="meta">${meta}</div><div class="matchbadges">${badges.join('')}</div>${tags.length ? `<div class="tags">${tags.join('')}</div>` : ''}${call.url ? `<div class="link">Link: <a href="${encodeURI(call.url)}" target="_blank" rel="noopener noreferrer">${esc(call.url)}</a></div>` : ''}</article>`;
+    });
+    resultsEl.innerHTML = html;
+    const shown = Math.min(visibleCount, filtered.length);
+    resultsProgressEl.textContent = `Stai vedendo ${shown} risultati su ${filtered.length}.`;
+    resultsFooterEl.classList.remove('hidden');
+    loadMoreBtn.classList.toggle('hidden', shown >= filtered.length);
+  }
+  function populateSelects(){
+    primaryEl.innerHTML = '<option value="" selected disabled>Seleziona…</option>' + THEMATIC_OPTIONS.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    secondaryEl.innerHTML = '<option value="">Nessuna</option>' + THEMATIC_OPTIONS.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  }
+  function downloadCsv(){
+    const filtered = applyLiveKeyword(lastGeneratedResults);
+    const rows = filtered.map(c => ({
+      name:c.name||'', programme:c.programme||'', thematic_cluster:c.thematic_cluster||'', cluster_label:c.cluster_label||'',
+      action:c.action||'', opening:c.opening||'', deadline:c.deadline||'', url:c.url||'', bucket:c._bucket||'', score:c._score||''
+    }));
+    const headers = Object.keys(rows[0] || {name:'',programme:'',thematic_cluster:'',cluster_label:'',action:'',opening:'',deadline:'',url:'',bucket:'',score:''});
+    const csv = [headers.join(',')].concat(rows.map(r => headers.map(h => '"' + String(r[h] ?? '').replace(/"/g,'""') + '"').join(','))).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'results.csv'; a.click(); URL.revokeObjectURL(a.href);
+  }
 
-      downloadResultsBtn.addEventListener('click', function () {
-        if (!lastAnswers || !lastGeneratedResults.length) return;
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const answers = {
+      closure_year: fd.get('closure_year') || '',
+      closure_quarter: fd.get('closure_quarter') || '',
+      project_nature: fd.get('project_nature') || '',
+      thematic_cluster: fd.get('thematic_cluster') || '',
+      secondary_thematic_cluster: fd.get('secondary_thematic_cluster') || '',
+      action_type: fd.get('action_type') || ''
+    };
+    if (answers.secondary_thematic_cluster && answers.secondary_thematic_cluster === answers.thematic_cluster) {
+      alert('Area primaria e secondaria devono essere diverse.');
+      return;
+    }
+    lastAnswers = answers;
+    visibleCount = PAGE_SIZE;
+    lastGeneratedResults = applyFilters(CALLS, answers);
+    resultsSection.classList.remove('hidden');
+    renderCalls();
+    resultsSection.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+  keywordFilterEl.addEventListener('input', () => { if (lastAnswers) { visibleCount = PAGE_SIZE; renderCalls(); } });
+  loadMoreBtn.addEventListener('click', () => { visibleCount += PAGE_SIZE; renderCalls(); });
+  downloadResultsBtn.addEventListener('click', () => { if (lastAnswers) downloadCsv(); });
+  resetBtn.addEventListener('click', () => { form.reset(); secondaryEl.value=''; resultsSection.classList.add('hidden'); resultsEl.innerHTML=''; resultsFooterEl.classList.add('hidden'); keywordFilterEl.value=''; });
 
-        const liveFiltered = applyLiveFilters(lastGeneratedResults);
-        if (!liveFiltered.length) return;
+  async function loadCalls(){
+    try {
+      const res = await fetch('./calls.json', {cache:'no-store'});
+      const data = await res.json();
+      if (data.generated) {
+        const d = new Date(data.generated);
+        lastUpdatedEl.textContent = `Dati aggiornati al: ${d.toLocaleDateString('it-IT')} ${d.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'})} UTC`;
+      }
+      CALLS = Array.isArray(data.calls) ? data.calls : [];
+    } catch (err) {
+      console.error(err);
+      lastUpdatedEl.textContent = 'Errore nel caricamento di calls.json';
+      CALLS = [];
+    }
+  }
 
-        const filename = 'funding-call-matcher-results-' +
-          String(lastAnswers.closure_year || 'export') + '-' +
-          String((lastAnswers.closure_quarter || 'QX')).toLowerCase() + '.csv';
-
-        downloadTextFile(filename, buildCallsCsv(liveFiltered), 'text/csv');
-      });
-
-      resetBtn.addEventListener('click', function () {
-        form.reset();
-        liveTopicFilterEl.innerHTML = '<option value="">Tutti i sottotemi</option>';
-        keywordFilterEl.value = '';
-        lastGeneratedResults = [];
-        lastAnswers = null;
-        visibleCount = PAGE_SIZE;
-        hideResultsArea();
-      });
-
-      CALLS = await loadCalls();
-    })();
-  </script>
+  populateSelects();
+  loadCalls();
+})();
+</script>
 </body>
 </html>
