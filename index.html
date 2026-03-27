@@ -426,6 +426,7 @@
             <option value="Climate-neutral &amp; Smart Cities">Climate-neutral &amp; Smart Cities</option>
             <option value="Healthy Oceans, Seas, Coastal &amp; Inland Waters">Healthy Oceans, Seas, Coastal &amp; Inland Waters</option>
             <option value="Clean Aviation">Clean Aviation</option>
+            <option value="Internships, fellowships & scholarships">Internships, fellowships & scholarships</option>
             <option value="Cross-cutting / Other">Cross-cutting / Other</option>
           </select>
 
@@ -444,6 +445,7 @@
             <option value="Climate-neutral &amp; Smart Cities">Climate-neutral &amp; Smart Cities</option>
             <option value="Healthy Oceans, Seas, Coastal &amp; Inland Waters">Healthy Oceans, Seas, Coastal &amp; Inland Waters</option>
             <option value="Clean Aviation">Clean Aviation</option>
+            <option value="Internships, fellowships & scholarships">Internships, fellowships & scholarships</option>
             <option value="Cross-cutting / Other">Cross-cutting / Other</option>
           </select>
 
@@ -535,6 +537,8 @@
       let lastAnswers = null;
       let visibleCount = 20;
       const PAGE_SIZE = 20;
+      const SPECIAL_BASIC_RESEARCH_CATEGORY = 'Internships, fellowships & scholarships';
+      const SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS = ['internship','internships','fellowship','fellowships','msca','scholarship','scholarships'];
 
       const MISSION_TO_CLUSTER = {
         CANCER: '1',
@@ -700,6 +704,13 @@
           }
         },
 
+        "Internships, fellowships & scholarships": {
+          label: "Internships, fellowships & scholarships",
+          topics: {
+            career_opportunities: ['internship','internships','fellowship','fellowships','msca','scholarship','scholarships','doctoral programme','doctoral program','postdoctoral','post-doc','research training']
+          }
+        },
+
         "Cross-cutting / Other": {
           label: "Cross-cutting / Other",
           topics: {
@@ -790,6 +801,17 @@
         ].join('-');
       }
 
+      function hasSpecialBasicResearchTitle(call) {
+        const title = String((call && call.name) || '').toLowerCase();
+        return SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS.some(function (keyword) {
+          return title.includes(keyword);
+        });
+      }
+
+      function isSpecialBasicResearchCategory(clusterName) {
+        return String(clusterName || '').trim() === SPECIAL_BASIC_RESEARCH_CATEGORY;
+      }
+
       function getCumulationNote(programme) {
         if (!programme) return CUMULATION_NOTES.default;
         const p = String(programme).toLowerCase();
@@ -824,6 +846,9 @@
       }
 
       function getKeywordsForThematic(clusterName) {
+        if (isSpecialBasicResearchCategory(clusterName)) {
+          return SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS.slice();
+        }
         const topicMap = getTopicMapForCluster(clusterName);
         const keywords = [];
         for (const topicKey in topicMap) {
@@ -836,6 +861,9 @@
 
       function hasThematicKeywords(call, clusterName) {
         if (!clusterName) return false;
+        if (isSpecialBasicResearchCategory(clusterName)) {
+          return hasSpecialBasicResearchTitle(call);
+        }
         const searchText = call._searchText || '';
         return getKeywordsForThematic(clusterName).some(function (keyword) {
           return searchText.includes(String(keyword).toLowerCase());
@@ -843,15 +871,23 @@
       }
 
       function getMultiThematic(call) {
-        if (Array.isArray(call.multi_thematic) && call.multi_thematic.length) return call.multi_thematic;
-        const out = [];
-        if (call.thematic_cluster) out.push(call.thematic_cluster);
+        const out = Array.isArray(call.multi_thematic) && call.multi_thematic.length
+          ? call.multi_thematic.slice()
+          : [];
+
+        if (call.thematic_cluster && !out.includes(call.thematic_cluster)) out.push(call.thematic_cluster);
+
         (call._topics || []).forEach(function (topicKey) {
           for (const clusterKey in TOPIC_CATALOG) {
             const genericMap = TOPIC_CATALOG[clusterKey].topics;
             if (genericMap[topicKey] && !out.includes(clusterKey)) out.push(clusterKey);
           }
         });
+
+        if (hasSpecialBasicResearchTitle(call) && !out.includes(SPECIAL_BASIC_RESEARCH_CATEGORY)) {
+          out.push(SPECIAL_BASIC_RESEARCH_CATEGORY);
+        }
+
         return out;
       }
 
@@ -867,19 +903,17 @@
           const found = keywords.some(function (keyword) {
             return text.includes(keyword.toLowerCase());
           });
-          if (found) topics.push(topicKey);
+          if (found && !topics.includes(topicKey)) topics.push(topicKey);
         }
 
-        if (!topics.length) {
-          for (const clusterKey in TOPIC_CATALOG) {
-            const genericMap = TOPIC_CATALOG[clusterKey].topics;
-            for (const topicKey in genericMap) {
-              const keywords = genericMap[topicKey];
-              const found = keywords.some(function (keyword) {
-                return text.includes(keyword.toLowerCase());
-              });
-              if (found && !topics.includes(topicKey)) topics.push(topicKey);
-            }
+        for (const clusterKey in TOPIC_CATALOG) {
+          const genericMap = TOPIC_CATALOG[clusterKey].topics;
+          for (const topicKey in genericMap) {
+            const keywords = genericMap[topicKey];
+            const found = keywords.some(function (keyword) {
+              return text.includes(keyword.toLowerCase());
+            });
+            if (found && !topics.includes(topicKey)) topics.push(topicKey);
           }
         }
 
@@ -896,7 +930,8 @@
           _deadline_norm: call.deadline_iso || fallbackIso(call.deadline),
           _is_horizon: isHorizonProgramme(call.programme),
           _topics: inferTopics({ ...call, full_text: call.full_text }),
-          _searchText: searchText
+          _searchText: searchText,
+          _is_special_basic_research: hasSpecialBasicResearchTitle(call)
         };
         enriched._multi_thematic = getMultiThematic(enriched);
         return enriched;
@@ -911,8 +946,8 @@
         const wantedAction = answers.action_type || '';
         const projectEnd = projectEndIso(answers.closure_year, answers.closure_quarter);
 
-        const isPrimaryByCluster = wantedPrimary && call._thematic_norm === wantedPrimary;
-        const isSecondaryByCluster = wantedSecondary && call._thematic_norm === wantedSecondary;
+        const isPrimaryByCluster = wantedPrimary && call._multi_thematic.includes(wantedPrimary);
+        const isSecondaryByCluster = wantedSecondary && call._multi_thematic.includes(wantedSecondary);
         const hasPrimaryKeywords = wantedPrimary && hasThematicKeywords(call, wantedPrimary);
         const hasSecondaryKeywords = wantedSecondary && hasThematicKeywords(call, wantedSecondary);
         const otherCluster = !isPrimaryByCluster && !isSecondaryByCluster;
@@ -942,6 +977,7 @@
         if (answers.project_nature === 'basic') {
           if (call._action_norm === 'RIA') score += 18;
           if (call._action_norm === 'CSA') score += 8;
+          if (call._is_special_basic_research) score += 40;
         } else if (answers.project_nature === 'applied') {
           if (call._action_norm === 'RIA') score += 12;
           if (call._action_norm === 'IA') score += 12;
@@ -995,8 +1031,8 @@
 
         if (wantedPrimary && wantedSecondary) {
           out = out.filter(function (call) {
-            const isPrimaryByCluster = call._thematic_norm === wantedPrimary;
-            const isSecondaryByCluster = call._thematic_norm === wantedSecondary;
+            const isPrimaryByCluster = call._multi_thematic.includes(wantedPrimary);
+            const isSecondaryByCluster = call._multi_thematic.includes(wantedSecondary);
             const otherCluster = !isPrimaryByCluster && !isSecondaryByCluster;
             return (isPrimaryByCluster && call._has_secondary_keywords)
               || isPrimaryByCluster
@@ -1005,7 +1041,7 @@
           });
         } else if (wantedPrimary) {
           out = out.filter(function (call) {
-            return call._thematic_norm === wantedPrimary || call._has_primary_keywords;
+            return call._multi_thematic.includes(wantedPrimary) || call._has_primary_keywords;
           });
         }
 
@@ -1155,11 +1191,16 @@
             ? '<span class="badge mission">Mission</span>'
             : '';
 
-          const topicsHtml = call._topics.length
-            ? '<div class="topic-tags">' + call._topics.map(function (topic) {
-                return '<span class="topic-tag">' + escapeHtml(prettyTopicLabel(topic)) + '</span>';
-              }).join('') + '</div>'
-            : '';
+          const topicsHtml = (function () {
+            const tags = [];
+            if (call._is_special_basic_research) {
+              tags.push('<span class="topic-tag">Internships / fellowships / scholarships</span>');
+            }
+            (call._topics || []).forEach(function (topic) {
+              tags.push('<span class="topic-tag">' + escapeHtml(prettyTopicLabel(topic)) + '</span>');
+            });
+            return tags.length ? '<div class="topic-tags">' + tags.join('') + '</div>' : '';
+          })();
 
           const cumulationHtml = call._is_horizon
             ? ''
