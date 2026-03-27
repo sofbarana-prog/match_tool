@@ -49,25 +49,6 @@ RE_ACTION    = re.compile(r"Type of action:\s*([^\|\n\r]+)",        re.IGNORECAS
 RE_CLUSTER   = re.compile(r"HORIZON-CL([1-6])",                     re.IGNORECASE)
 RE_CALL_ID   = re.compile(r"callIdentifier[=:\s]+([^\s&\|\n\r]+)",  re.IGNORECASE)
 
-# Budget patterns — ordered from most to least reliable
-# Matches: "Budget: €1,500,000" / "Total budget: 2.500.000 €" / "budget of EUR 1 500 000"
-RE_BUDGET_LABEL = re.compile(
-    r"(?:total\s+)?budget[:\s]+(?:of\s+)?(?:EUR|€|euro)?\s*([\d][0-9 .,]+)",
-    re.IGNORECASE,
-)
-RE_BUDGET_SUFFIX = re.compile(
-    r"([\d][0-9 .,]+)\s*(?:EUR|€|euro)",
-    re.IGNORECASE,
-)
-RE_BUDGET_INDICATIVE = re.compile(
-    r"indicative\s+(?:total\s+)?budget[:\s]+(?:EUR|€|euro)?\s*([\d][0-9 .,]+)",
-    re.IGNORECASE,
-)
-RE_BUDGET_EXPECTED = re.compile(
-    r"(?:total\s+)?(?:estimated|expected|available|allocated)\s+budget[:\s]+(?:EUR|€|euro)?\s*([\d][0-9 .,]+)",
-    re.IGNORECASE,
-)
-
 MONTHS = {
     "january":1,"february":2,"march":3,"april":4,"may":5,"june":6,
     "july":7,"august":8,"september":9,"october":10,"november":11,"december":12,
@@ -351,61 +332,7 @@ def beneficiary_hint(action: str, prog: str, url_benef):
 
 # ── Parsing date ──────────────────────────────────────────────────────────────
 
-def parse_budget(s: str) -> int:
-    """Normalize a raw budget string to an integer euro amount.
-    Returns 0 if unparseable. Handles formats like:
-      1,500,000 / 1.500.000 / 1 500 000 / 1.5M / 2,3M
-    """
-    if not s:
-        return 0
-    s = s.strip()
-    # Millions shorthand: 1.5M or 2,3M
-    m = re.match(r"^([\d]+[.,][\d]+)\s*[Mm]$", s)
-    if m:
-        try:
-            return int(float(m.group(1).replace(",", ".")) * 1_000_000)
-        except ValueError:
-            pass
-    m2 = re.match(r"^([\d]+)\s*[Mm]$", s)
-    if m2:
-        try:
-            return int(m2.group(1)) * 1_000_000
-        except ValueError:
-            pass
-    # Strip anything that isn't a digit, comma, dot, or space
-    cleaned = re.sub(r"[^\d,. ]", "", s).strip()
-    # Detect European format: 1.500.000 or 1.500.000,00
-    if re.match(r"^\d{1,3}(\.\d{3})+(,\d+)?$", cleaned):
-        cleaned = cleaned.replace(".", "").replace(",", ".")
-    # American format: 1,500,000 or 1,500,000.00
-    elif re.match(r"^\d{1,3}(,\d{3})+(\.\d+)?$", cleaned):
-        cleaned = cleaned.replace(",", "")
-    else:
-        # Space-separated: 1 500 000
-        cleaned = cleaned.replace(" ", "").replace(",", ".")
-    try:
-        return int(float(cleaned))
-    except ValueError:
-        return 0
-
-
-def extract_budget_from_text(text: str) -> int:
-    """Try multiple regex patterns against page body text.
-    Returns the best (largest plausible) match in euros, or 0.
-    """
-    candidates = []
-    for rx in (RE_BUDGET_INDICATIVE, RE_BUDGET_EXPECTED, RE_BUDGET_LABEL, RE_BUDGET_SUFFIX):
-        for m in rx.finditer(text or ""):
-            val = parse_budget(m.group(1))
-            # Sanity: between €10,000 and €10 billion
-            if 10_000 <= val <= 10_000_000_000:
-                candidates.append(val)
-    if not candidates:
-        return 0
-    # Prefer the largest single figure (total budget > per-project budget)
-    return max(candidates)
-
-
+def parse_date_iso(s: str) -> str:
     s = re.sub(r"\s+", " ", str(s or "")).strip()
     if not s:
         return ""
@@ -597,23 +524,6 @@ def _enrich_one(page, row: dict) -> bool:
                         _c["action"] = action
                     if cid and not _c.get("call_id"):
                         _c["call_id"] = cid
-
-                    # ── Budget: try every known XHR field name ────────────────
-                    if not _c.get("budget"):
-                        for key in (
-                            "budgetOverviewTotal", "totalBudget", "budget",
-                            "budgetTopicActions", "indicativeBudget",
-                            "availableBudget", "estimatedTotalContribution",
-                            "fundingRate", "maxContribution",
-                        ):
-                            raw = meta.get(key)
-                            if isinstance(raw, list):
-                                raw = raw[0] if raw else None
-                            if raw is not None:
-                                val = parse_budget(str(raw))
-                                if val > 0:
-                                    _c["budget"] = val
-                                    break
             except Exception:
                 pass
 
@@ -626,13 +536,6 @@ def _enrich_one(page, row: dict) -> bool:
         except Exception:
             body_text = ""
         row["full_text"] = clean(body_text) or ""
-
-        # ── Budget fallback: scan page text ──────────────────────────────────
-        if not captured.get("budget") and body_text:
-            val = extract_budget_from_text(body_text)
-            if val > 0:
-                captured["budget"] = val
-
     except Exception as e:
         print(f"    [ERR goto] {e}", flush=True)
     finally:
@@ -644,8 +547,6 @@ def _enrich_one(page, row: dict) -> bool:
         row["action_raw"] = captured["action"]
     if captured.get("call_id") and not row.get("call_id"):
         row["call_id"] = captured["call_id"]
-    if captured.get("budget") and not row.get("budget_raw"):
-        row["budget_raw"] = captured["budget"]
 
     return bool(captured) or bool(row.get("full_text"))
 
@@ -743,7 +644,6 @@ def to_call(row: dict) -> dict:
         "url":              url,
         "is_mission":       is_mission,
         "beneficiary_hint": beneficiary_hint(action, prog_raw, u_benef),
-        "budget":           row.get("budget_raw") or 0,
         "full_text":        multi["full_text"],
         "keyword_hits":     multi["keyword_hits"],
         "multi_thematic":   multi["multi_thematic"],
@@ -977,4 +877,5 @@ if __name__ == "__main__":
     parser.add_argument("--out", default="calls.json", help="Percorso output JSON")
     args = parser.parse_args()
     main(Path(args.out))
+
 
