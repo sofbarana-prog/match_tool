@@ -429,6 +429,24 @@
             <option value="Cross-cutting / Other">Cross-cutting / Other</option>
           </select>
 
+          <label for="secondary_thematic_cluster" style="margin-top:12px;">Area tematica secondaria</label>
+          <select id="secondary_thematic_cluster" name="secondary_thematic_cluster">
+            <option value="">Nessuna</option>
+            <option value="Health &amp; Life Sciences">Health &amp; Life Sciences</option>
+            <option value="Culture, Creativity &amp; Inclusion">Culture, Creativity &amp; Inclusion</option>
+            <option value="Security &amp; Resilience">Security &amp; Resilience</option>
+            <option value="Digital, Industry &amp; Space">Digital, Industry &amp; Space</option>
+            <option value="Climate, Energy &amp; Mobility">Climate, Energy &amp; Mobility</option>
+            <option value="Food, Bioeconomy &amp; Environment">Food, Bioeconomy &amp; Environment</option>
+            <option value="Defence">Defence</option>
+            <option value="SME, Entrepreneurship &amp; Market Uptake">SME, Entrepreneurship &amp; Market Uptake</option>
+            <option value="External Action &amp; International Cooperation">External Action &amp; International Cooperation</option>
+            <option value="Climate-neutral &amp; Smart Cities">Climate-neutral &amp; Smart Cities</option>
+            <option value="Healthy Oceans, Seas, Coastal &amp; Inland Waters">Healthy Oceans, Seas, Coastal &amp; Inland Waters</option>
+            <option value="Clean Aviation">Clean Aviation</option>
+            <option value="Cross-cutting / Other">Cross-cutting / Other</option>
+          </select>
+
           <label for="official_cluster" style="margin-top:12px;">Cluster Horizon Europe ufficiale</label>
           <p class="hint">
             Se scegli un cluster ufficiale, il matching si restringe alle call Horizon Europe coerenti con quel cluster.
@@ -795,13 +813,46 @@
           call.objective,
           call.scope,
           call.destination,
-          call.topic
+          call.topic,
+          call.full_text
         ].filter(Boolean).join(' ').toLowerCase();
       }
 
       function getTopicMapForCluster(clusterName) {
         const entry = TOPIC_CATALOG[clusterName];
         return entry ? entry.topics : {};
+      }
+
+      function getKeywordsForThematic(clusterName) {
+        const topicMap = getTopicMapForCluster(clusterName);
+        const keywords = [];
+        for (const topicKey in topicMap) {
+          (topicMap[topicKey] || []).forEach(function (keyword) {
+            if (!keywords.includes(keyword)) keywords.push(keyword);
+          });
+        }
+        return keywords;
+      }
+
+      function hasThematicKeywords(call, clusterName) {
+        if (!clusterName) return false;
+        const searchText = call._searchText || '';
+        return getKeywordsForThematic(clusterName).some(function (keyword) {
+          return searchText.includes(String(keyword).toLowerCase());
+        });
+      }
+
+      function getMultiThematic(call) {
+        if (Array.isArray(call.multi_thematic) && call.multi_thematic.length) return call.multi_thematic;
+        const out = [];
+        if (call.thematic_cluster) out.push(call.thematic_cluster);
+        (call._topics || []).forEach(function (topicKey) {
+          for (const clusterKey in TOPIC_CATALOG) {
+            const genericMap = TOPIC_CATALOG[clusterKey].topics;
+            if (genericMap[topicKey] && !out.includes(clusterKey)) out.push(clusterKey);
+          }
+        });
+        return out;
       }
 
       function inferTopics(call) {
@@ -836,39 +887,55 @@
       }
 
       function enrichCall(call) {
-        return {
+        const searchText = buildSearchText(call) + ' ' + String(call.full_text || '').toLowerCase();
+        const enriched = {
           ...call,
           _official_norm: normalizeCluster(call.cluster_num),
           _thematic_norm: String(call.thematic_cluster || '').trim(),
           _action_norm: normalizeAction(call.action),
           _deadline_norm: call.deadline_iso || fallbackIso(call.deadline),
           _is_horizon: isHorizonProgramme(call.programme),
-          _topics: inferTopics(call),
-          _searchText: buildSearchText(call)
+          _topics: inferTopics({ ...call, full_text: call.full_text }),
+          _searchText: searchText
         };
+        enriched._multi_thematic = getMultiThematic(enriched);
+        return enriched;
       }
 
       function scoreCall(call, answers) {
         let score = 0;
 
-        const wantedThematic = answers.thematic_cluster || '';
+        const wantedPrimary = answers.thematic_cluster || '';
+        const wantedSecondary = answers.secondary_thematic_cluster || '';
         const wantedOfficial = normalizeCluster(answers.official_cluster);
         const wantedAction = answers.action_type || '';
         const projectEnd = projectEndIso(answers.closure_year, answers.closure_quarter);
 
-        if (wantedThematic && call._thematic_norm === wantedThematic) score += 60;
+        const isPrimaryByCluster = wantedPrimary && call._thematic_norm === wantedPrimary;
+        const isSecondaryByCluster = wantedSecondary && call._thematic_norm === wantedSecondary;
+        const hasPrimaryKeywords = wantedPrimary && hasThematicKeywords(call, wantedPrimary);
+        const hasSecondaryKeywords = wantedSecondary && hasThematicKeywords(call, wantedSecondary);
+        const otherCluster = !isPrimaryByCluster && !isSecondaryByCluster;
+
+        if (isPrimaryByCluster && hasSecondaryKeywords) score += 1000;
+        else if (isPrimaryByCluster) score += 800;
+        else if (isSecondaryByCluster && hasPrimaryKeywords) score += 600;
+        else if (otherCluster && hasPrimaryKeywords && hasSecondaryKeywords) score += 400;
+        else if (isSecondaryByCluster) score += 150;
+        else if (hasPrimaryKeywords) score += 120;
+        else if (hasSecondaryKeywords) score += 60;
 
         if (wantedOfficial) {
           const wantedResolved = resolveCluster(wantedOfficial);
           const callResolved = resolveCluster(call._official_norm);
-          if (wantedResolved === callResolved) score += 25;
+          if (wantedResolved === callResolved) score += 40;
         }
 
         if (wantedAction && call._is_horizon) {
           if (wantedAction === 'OTHER') {
-            if (!call._action_norm || !['IA','RIA','CSA','COFUND'].includes(call._action_norm)) score += 30;
+            if (!call._action_norm || !['IA','RIA','CSA','COFUND'].includes(call._action_norm)) score += 20;
           } else if (call._action_norm === wantedAction) {
-            score += 35;
+            score += 30;
           }
         }
 
@@ -889,18 +956,13 @@
       }
 
       function applyBaseFilters(calls, answers) {
-        const wantedThematic = answers.thematic_cluster || '';
+        const wantedPrimary = answers.thematic_cluster || '';
+        const wantedSecondary = answers.secondary_thematic_cluster || '';
         const wantedOfficial = normalizeCluster(answers.official_cluster);
         const wantedAction = answers.action_type || '';
         const projectEnd = projectEndIso(answers.closure_year, answers.closure_quarter);
 
         let out = calls.map(enrichCall);
-
-        if (wantedThematic) {
-          out = out.filter(function (call) {
-            return call._thematic_norm === wantedThematic;
-          });
-        }
 
         if (wantedOfficial) {
           const resolvedWanted = resolveCluster(wantedOfficial);
@@ -926,8 +988,26 @@
         }
 
         out.forEach(function (call) {
+          call._has_primary_keywords = wantedPrimary && hasThematicKeywords(call, wantedPrimary);
+          call._has_secondary_keywords = wantedSecondary && hasThematicKeywords(call, wantedSecondary);
           call._score = scoreCall(call, answers);
         });
+
+        if (wantedPrimary && wantedSecondary) {
+          out = out.filter(function (call) {
+            const isPrimaryByCluster = call._thematic_norm === wantedPrimary;
+            const isSecondaryByCluster = call._thematic_norm === wantedSecondary;
+            const otherCluster = !isPrimaryByCluster && !isSecondaryByCluster;
+            return (isPrimaryByCluster && call._has_secondary_keywords)
+              || isPrimaryByCluster
+              || (isSecondaryByCluster && call._has_primary_keywords)
+              || (otherCluster && call._has_primary_keywords && call._has_secondary_keywords);
+          });
+        } else if (wantedPrimary) {
+          out = out.filter(function (call) {
+            return call._thematic_norm === wantedPrimary || call._has_primary_keywords;
+          });
+        }
 
         return out
           .filter(function (call) {
@@ -1029,7 +1109,8 @@
         const pills = [
           'Chiusura: ' + answers.closure_year + ' ' + answers.closure_quarter,
           'Natura: ' + (answers.project_nature || 'Qualsiasi'),
-          'Cluster: ' + (answers.thematic_cluster || '—'),
+          'Cluster principale: ' + (answers.thematic_cluster || '—'),
+          'Cluster secondario: ' + (answers.secondary_thematic_cluster || '—'),
           'Cluster HE: ' + (answers.official_cluster || 'Qualsiasi'),
           'Action: ' + (answers.action_type || 'Qualsiasi')
         ];
@@ -1154,6 +1235,7 @@
           closure_quarter: fd.get('closure_quarter'),
           project_nature: fd.get('project_nature'),
           thematic_cluster: fd.get('thematic_cluster'),
+          secondary_thematic_cluster: fd.get('secondary_thematic_cluster'),
           official_cluster: fd.get('official_cluster'),
           action_type: fd.get('action_type')
         };
@@ -1196,6 +1278,7 @@
 
         populateDynamicTopicFilter(lastAnswers.thematic_cluster, lastGeneratedResults);
         liveTopicFilterEl.value = '';
+        document.getElementById('secondary_thematic_cluster').value = '';
         keywordFilterEl.value = '';
 
         showResultsArea();
