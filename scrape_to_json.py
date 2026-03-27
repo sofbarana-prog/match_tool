@@ -199,74 +199,73 @@ NUMERIC_ID_NAME_RULES = [
     ("FERMENTED",   "Food, Bioeconomy & Environment"),
 ]
 
-SPECIAL_BASIC_RESEARCH_CATEGORY = 'Internships, fellowships & scholarships'
-SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS = [
-    'internship','internships','fellowship','fellowships','msca','scholarship','scholarships'
-]
-
 URL_BENEFICIARY_OVERRIDE = {
     "MSCA":  ["Research organisation"],
     "INFRA": ["Research organisation"],
     "EUBA":  ["Public body"],
 }
 
-THEMATIC_KEYWORDS = {
-    'Internships, fellowships & scholarships': [
-        "internship","internships","fellowship","fellowships","msca","scholarship","scholarships",
-        "doctoral programme","doctoral program","postdoctoral","post-doc","research training"
-    ],
-    "Health & Life Sciences": [
-        "health","clinical","patient","patients","medical","medicine","biotech","biotechnology","pharma","pharmaceutical",
-        "drug","therapy","therapeutic","diagnostic","genomic","genomics","gene","disease","cancer","oncology",
-        "hospital","care pathway","digital health","telemedicine"
-    ],
-    "Culture, Creativity & Inclusion": [
-        "culture","cultural","heritage","museum","creative","inclusion","social inclusion","education","skills",
-        "democracy","citizen engagement","migration","refugee"
-    ],
-    "Security & Resilience": [
-        "security","cybersecurity","cyber security","resilience","disaster","preparedness","border","surveillance",
-        "civil protection","first responder","critical infrastructure","threat"
-    ],
-    "Digital, Industry & Space": [
-        "digital","software","platform","data","data space","cloud","edge","ai","artificial intelligence",
-        "machine learning","robotics","semiconductor","chip","microelectronics","quantum","iot","cyber-physical",
-        "digital twin","interoperability","automation","advanced manufacturing","space","satellite"
-    ],
-    "Climate, Energy & Mobility": [
-        "climate","energy","energies","electricity","power system","grid","smart grid","renewable","solar","wind",
-        "hydrogen","h2","battery","batteries","storage","electrification","mobility","transport","vehicle",
-        "ev","electric vehicle","charging","emission","decarbonisation","decarbonization","net zero","carbon",
-        "co2","building","buildings","retrofit","heat pump"
-    ],
-    "Food, Bioeconomy & Environment": [
-        "food","agriculture","farming","crop","soil","bioeconomy","bio-based","biobased","biomass","biodiversity",
-        "ecosystem","forestry","forest","water resource","freshwater","pollution","environment","aquaculture"
-    ],
-    "Defence": [
-        "defence","defense","military","battlefield","uav","drone","tactical","radar","sonar","armour"
-    ],
-    "SME, Entrepreneurship & Market Uptake": [
-        "sme","startup","start-up","scaleup","scale-up","commercialisation","commercialization","go-to-market",
-        "market uptake","business model","entrepreneurship"
-    ],
-    "External Action & International Cooperation": [
-        "international cooperation","capacity building","development cooperation","humanitarian","multilateral","bilateral",
-        "global partnership","public administration"
-    ],
-    "Climate-neutral & Smart Cities": [
-        "smart city","smart cities","urban innovation","urban mobility","district energy","climate-neutral city",
-        "net zero city","urban decarbonisation","urban decarbonization"
-    ],
-    "Healthy Oceans, Seas, Coastal & Inland Waters": [
-        "ocean","marine","sea","coastal","blue economy","fisheries","aquaculture","marine litter","inland waters"
-    ],
-    "Clean Aviation": [
-        "aviation","aircraft","airframe","aerostructure","propulsion","sustainable aviation fuel","saf",
-        "airport","zero-emission aircraft"
-    ],
+SPECIAL_BASIC_RESEARCH_CATEGORY = "Internships, fellowships & scholarships"
+SPECIAL_TITLE_KEYWORDS = ["internship","internships","fellowship","fellowships","msca","scholarship","scholarships"]
+TOPIC_KEYWORDS = {
+    "Health & Life Sciences": ["health","biotech","biotechnology","pharma","pharmaceutical","therapeutic","medical","diagnostic","genomic","genomics","public health","clinical"],
+    "Culture, Creativity & Inclusion": ["culture","creative","heritage","museum","archive","inclusion","social inclusion","democracy","education","skills"],
+    "Security & Resilience": ["security","cybersecurity","cyber security","disaster resilience","emergency","critical infrastructure","civil protection","border security"],
+    "Digital, Industry & Space": ["digital","artificial intelligence","machine learning","generative ai","data space","data sharing","cloud","edge","software","semiconductor","microelectronics","quantum","robotics","space","satellite"],
+    "Climate, Energy & Mobility": ["climate","adaptation","mitigation","energy","electricity","power system","grid","hydrogen","battery","batteries","mobility","transport","renewable","solar","photovoltaic","wind","storage","smart grid","building renovation","built environment","city","cities"],
+    "Food, Bioeconomy & Environment": ["agriculture","farming","crop","food system","bioeconomy","biodiversity","forestry","soil","water resources","environment","ecosystem","marine"],
+    "Defence": ["defence","defense","dual-use","dual use","military"],
+    "SME, Entrepreneurship & Market Uptake": ["sme","startup","entrepreneurship","venture","scale-up","market uptake","innovation uptake"],
+    "External Action & International Cooperation": ["international cooperation","development cooperation","global south","partner countries","external action"],
+    "Climate-neutral & Smart Cities": ["smart city","smart cities","climate-neutral city","urban transition","city mission"],
+    "Healthy Oceans, Seas, Coastal & Inland Waters": ["ocean","oceans","sea","seas","coastal","inland waters","marine","blue economy"],
+    "Clean Aviation": ["aviation","aircraft","aeronautics","sustainable aviation"],
+    "Cross-cutting / Other": ["interdisciplinary","cross-cutting","widening","research infrastructure","eosc"],
 }
 
+def escape_rx(s: str) -> str:
+    return re.escape(s or "")
+
+def text_has_keyword(text: str, keyword: str) -> bool:
+    return bool(re.search(rf"(?<![A-Za-z]){escape_rx(keyword.lower())}(?![A-Za-z])", (text or "").lower()))
+
+def keyword_hits_for_thematic(text: str, thematic: str):
+    hits = []
+    for kw in TOPIC_KEYWORDS.get(thematic, []):
+        if text_has_keyword(text, kw):
+            hits.append(kw)
+    return list(dict.fromkeys(hits))
+
+def title_is_special_basic_research(title: str) -> bool:
+    tl = (title or "").lower()
+    return any(text_has_keyword(tl, kw) for kw in SPECIAL_TITLE_KEYWORDS)
+
+def classify_multitopic(name: str, full_text: str, thematic: str):
+    text = re.sub(r"\s+", " ", (full_text or "")).strip().lower()
+    keyword_hits = {}
+    multi_thematic = []
+    for area in TOPIC_KEYWORDS:
+        hits = keyword_hits_for_thematic(text, area)
+        if hits:
+            keyword_hits[area] = hits
+            multi_thematic.append(area)
+
+    special = title_is_special_basic_research(name)
+    if special:
+        keyword_hits[SPECIAL_BASIC_RESEARCH_CATEGORY] = [kw for kw in SPECIAL_TITLE_KEYWORDS if text_has_keyword((name or "").lower(), kw)]
+        if SPECIAL_BASIC_RESEARCH_CATEGORY not in multi_thematic:
+            multi_thematic.append(SPECIAL_BASIC_RESEARCH_CATEGORY)
+
+    primary_or_special = thematic
+    if special and primary_or_special != SPECIAL_BASIC_RESEARCH_CATEGORY:
+        pass
+
+    return {
+        "full_text": text,
+        "keyword_hits": keyword_hits,
+        "multi_thematic": multi_thematic,
+        "is_special_basic_research": special,
+    }
 
 # ── Classificazione ───────────────────────────────────────────────────────────
 
@@ -330,45 +329,6 @@ def beneficiary_hint(action: str, prog: str, url_benef):
     if a == "CSA":  hints.extend(["Research organisation","Public body","NGO","SME"])
     if "external action" in p: hints.extend(["NGO","Public body","Research organisation"])
     return list(dict.fromkeys(hints))
-
-def normalize_space(text: str) -> str:
-    return re.sub(r"\s+", " ", str(text or "")).strip()
-
-
-def has_special_basic_research_title(title: str) -> bool:
-    title_low = normalize_space(title).lower()
-    if not title_low:
-        return False
-    return any(kw in title_low for kw in SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS)
-
-
-def keyword_hits_by_thematic(text: str) -> dict:
-    text_low = normalize_space(text).lower()
-    hits = {}
-    if not text_low:
-        return hits
-    for thematic, keywords in THEMATIC_KEYWORDS.items():
-        matched = [kw for kw in keywords if kw.lower() in text_low]
-        if matched:
-            hits[thematic] = sorted(set(matched), key=lambda x: (len(x), x))
-    return hits
-
-
-def thematic_assignments(primary_thematic: str, full_text: str, title: str = "") -> tuple[list, dict]:
-    hits = keyword_hits_by_thematic(full_text)
-    ordered = []
-    if primary_thematic:
-        ordered.append(primary_thematic)
-    if has_special_basic_research_title(title):
-        ordered.append(SPECIAL_BASIC_RESEARCH_CATEGORY)
-        hits.setdefault(SPECIAL_BASIC_RESEARCH_CATEGORY, sorted(set([
-            kw for kw in SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS if kw in normalize_space(title).lower()
-        ])))
-    for thematic, kws in sorted(hits.items(), key=lambda kv: (-len(kv[1]), kv[0])):
-        if thematic not in ordered:
-            ordered.append(thematic)
-    return ordered, hits
-
 
 # ── Parsing date ──────────────────────────────────────────────────────────────
 
@@ -530,7 +490,6 @@ def parse_card(page, full_url: str) -> dict:
         "opening_raw":    pick(RE_OPEN, text),
         "deadline_raw":   dead,
         "url":            full_url,
-        "full_text":      "",
         "_needs_enrich":  False,
     }
 
@@ -546,8 +505,7 @@ def _first(meta, *keys):
     return ""
 
 def _enrich_one(page, row: dict) -> bool:
-    """Apre una pagina di dettaglio e cattura i campi mancanti via XHR.
-    Restituisce True se almeno un campo è stato recuperato."""
+    """Apre una pagina di dettaglio, cattura i campi mancanti via XHR e salva anche il testo completo della call."""
     url      = row["url"]
     captured = {}
 
@@ -574,11 +532,10 @@ def _enrich_one(page, row: dict) -> bool:
         page.goto(url, wait_until="domcontentloaded", timeout=30_000)
         page.wait_for_timeout(2500)
         try:
-            body_text = normalize_space(page.locator("body").inner_text())
-            if body_text:
-                row["full_text"] = body_text
+            body_text = page.locator("body").inner_text(timeout=5000)
         except Exception:
-            pass
+            body_text = ""
+        row["full_text"] = clean(body_text) or ""
     except Exception as e:
         print(f"    [ERR goto] {e}", flush=True)
     finally:
@@ -591,7 +548,7 @@ def _enrich_one(page, row: dict) -> bool:
     if captured.get("call_id") and not row.get("call_id"):
         row["call_id"] = captured["call_id"]
 
-    return bool(captured)
+    return bool(captured) or bool(row.get("full_text"))
 
 
 def enrich(ctx, rows: list):
@@ -668,8 +625,9 @@ def to_call(row: dict) -> dict:
 
     opening_raw  = row.get("opening_raw") or ""
     deadline_raw = row.get("deadline_raw") or ""
-    full_text = normalize_space(row.get("full_text") or "")
-    multi_thematic, keyword_hits = thematic_assignments(thematic, full_text, row.get("name") or "")
+
+    full_text = row.get("full_text") or ""
+    multi = classify_multitopic(row.get("name") or "", full_text, thematic)
 
     return {
         "name":             row.get("name") or "",
@@ -686,10 +644,10 @@ def to_call(row: dict) -> dict:
         "url":              url,
         "is_mission":       is_mission,
         "beneficiary_hint": beneficiary_hint(action, prog_raw, u_benef),
-        "full_text":        full_text,
-        "multi_thematic":   multi_thematic,
-        "keyword_hits":     keyword_hits,
-        "is_basic_research_opportunity": has_special_basic_research_title(row.get("name") or ""),
+        "full_text":        multi["full_text"],
+        "keyword_hits":     multi["keyword_hits"],
+        "multi_thematic":   multi["multi_thematic"],
+        "is_special_basic_research": multi["is_special_basic_research"],
     }
 
 # ── Changelog ────────────────────────────────────────────────────────────────
@@ -863,7 +821,7 @@ def main(out_path: Path):
             time.sleep(0.1)
 
         # ── Passo 2: arricchimento ────────────────────────────────────────────
-        needs = [r for r in rows if not r.get("programme_raw") or not r.get("action_raw") or not r.get("call_id")]
+        needs = rows[:]
         print(f"\n═══ Passo 2: arricchimento {len(needs)} call su {len(rows)} totali ═══", flush=True)
         enrich(ctx, rows)
         browser.close()
