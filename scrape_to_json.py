@@ -199,6 +199,11 @@ NUMERIC_ID_NAME_RULES = [
     ("FERMENTED",   "Food, Bioeconomy & Environment"),
 ]
 
+SPECIAL_BASIC_RESEARCH_CATEGORY = 'Internships, fellowships & scholarships'
+SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS = [
+    'internship','internships','fellowship','fellowships','msca','scholarship','scholarships'
+]
+
 URL_BENEFICIARY_OVERRIDE = {
     "MSCA":  ["Research organisation"],
     "INFRA": ["Research organisation"],
@@ -206,6 +211,10 @@ URL_BENEFICIARY_OVERRIDE = {
 }
 
 THEMATIC_KEYWORDS = {
+    'Internships, fellowships & scholarships': [
+        "internship","internships","fellowship","fellowships","msca","scholarship","scholarships",
+        "doctoral programme","doctoral program","postdoctoral","post-doc","research training"
+    ],
     "Health & Life Sciences": [
         "health","clinical","patient","patients","medical","medicine","biotech","biotechnology","pharma","pharmaceutical",
         "drug","therapy","therapeutic","diagnostic","genomic","genomics","gene","disease","cancer","oncology",
@@ -326,6 +335,13 @@ def normalize_space(text: str) -> str:
     return re.sub(r"\s+", " ", str(text or "")).strip()
 
 
+def has_special_basic_research_title(title: str) -> bool:
+    title_low = normalize_space(title).lower()
+    if not title_low:
+        return False
+    return any(kw in title_low for kw in SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS)
+
+
 def keyword_hits_by_thematic(text: str) -> dict:
     text_low = normalize_space(text).lower()
     hits = {}
@@ -338,11 +354,16 @@ def keyword_hits_by_thematic(text: str) -> dict:
     return hits
 
 
-def thematic_assignments(primary_thematic: str, full_text: str) -> tuple[list, dict]:
+def thematic_assignments(primary_thematic: str, full_text: str, title: str = "") -> tuple[list, dict]:
     hits = keyword_hits_by_thematic(full_text)
     ordered = []
     if primary_thematic:
         ordered.append(primary_thematic)
+    if has_special_basic_research_title(title):
+        ordered.append(SPECIAL_BASIC_RESEARCH_CATEGORY)
+        hits.setdefault(SPECIAL_BASIC_RESEARCH_CATEGORY, sorted(set([
+            kw for kw in SPECIAL_BASIC_RESEARCH_TITLE_KEYWORDS if kw in normalize_space(title).lower()
+        ])))
     for thematic, kws in sorted(hits.items(), key=lambda kv: (-len(kv[1]), kv[0])):
         if thematic not in ordered:
             ordered.append(thematic)
@@ -648,7 +669,7 @@ def to_call(row: dict) -> dict:
     opening_raw  = row.get("opening_raw") or ""
     deadline_raw = row.get("deadline_raw") or ""
     full_text = normalize_space(row.get("full_text") or "")
-    multi_thematic, keyword_hits = thematic_assignments(thematic, full_text)
+    multi_thematic, keyword_hits = thematic_assignments(thematic, full_text, row.get("name") or "")
 
     return {
         "name":             row.get("name") or "",
@@ -668,6 +689,7 @@ def to_call(row: dict) -> dict:
         "full_text":        full_text,
         "multi_thematic":   multi_thematic,
         "keyword_hits":     keyword_hits,
+        "is_basic_research_opportunity": has_special_basic_research_title(row.get("name") or ""),
     }
 
 # ── Changelog ────────────────────────────────────────────────────────────────
