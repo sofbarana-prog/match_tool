@@ -205,6 +205,60 @@ URL_BENEFICIARY_OVERRIDE = {
     "EUBA":  ["Public body"],
 }
 
+THEMATIC_KEYWORDS = {
+    "Health & Life Sciences": [
+        "health","clinical","patient","patients","medical","medicine","biotech","biotechnology","pharma","pharmaceutical",
+        "drug","therapy","therapeutic","diagnostic","genomic","genomics","gene","disease","cancer","oncology",
+        "hospital","care pathway","digital health","telemedicine"
+    ],
+    "Culture, Creativity & Inclusion": [
+        "culture","cultural","heritage","museum","creative","inclusion","social inclusion","education","skills",
+        "democracy","citizen engagement","migration","refugee"
+    ],
+    "Security & Resilience": [
+        "security","cybersecurity","cyber security","resilience","disaster","preparedness","border","surveillance",
+        "civil protection","first responder","critical infrastructure","threat"
+    ],
+    "Digital, Industry & Space": [
+        "digital","software","platform","data","data space","cloud","edge","ai","artificial intelligence",
+        "machine learning","robotics","semiconductor","chip","microelectronics","quantum","iot","cyber-physical",
+        "digital twin","interoperability","automation","advanced manufacturing","space","satellite"
+    ],
+    "Climate, Energy & Mobility": [
+        "climate","energy","energies","electricity","power system","grid","smart grid","renewable","solar","wind",
+        "hydrogen","h2","battery","batteries","storage","electrification","mobility","transport","vehicle",
+        "ev","electric vehicle","charging","emission","decarbonisation","decarbonization","net zero","carbon",
+        "co2","building","buildings","retrofit","heat pump"
+    ],
+    "Food, Bioeconomy & Environment": [
+        "food","agriculture","farming","crop","soil","bioeconomy","bio-based","biobased","biomass","biodiversity",
+        "ecosystem","forestry","forest","water resource","freshwater","pollution","environment","aquaculture"
+    ],
+    "Defence": [
+        "defence","defense","military","battlefield","uav","drone","tactical","radar","sonar","armour"
+    ],
+    "SME, Entrepreneurship & Market Uptake": [
+        "sme","startup","start-up","scaleup","scale-up","commercialisation","commercialization","go-to-market",
+        "market uptake","business model","entrepreneurship"
+    ],
+    "External Action & International Cooperation": [
+        "international cooperation","capacity building","development cooperation","humanitarian","multilateral","bilateral",
+        "global partnership","public administration"
+    ],
+    "Climate-neutral & Smart Cities": [
+        "smart city","smart cities","urban innovation","urban mobility","district energy","climate-neutral city",
+        "net zero city","urban decarbonisation","urban decarbonization"
+    ],
+    "Healthy Oceans, Seas, Coastal & Inland Waters": [
+        "ocean","marine","sea","coastal","blue economy","fisheries","aquaculture","marine litter","inland waters"
+    ],
+    "Clean Aviation": [
+        "aviation","aircraft","airframe","aerostructure","propulsion","sustainable aviation fuel","saf",
+        "airport","zero-emission aircraft"
+    ],
+}
+
+
 # ── Classificazione ───────────────────────────────────────────────────────────
 
 def _topic_id(url: str) -> str:
@@ -267,6 +321,33 @@ def beneficiary_hint(action: str, prog: str, url_benef):
     if a == "CSA":  hints.extend(["Research organisation","Public body","NGO","SME"])
     if "external action" in p: hints.extend(["NGO","Public body","Research organisation"])
     return list(dict.fromkeys(hints))
+
+def normalize_space(text: str) -> str:
+    return re.sub(r"\s+", " ", str(text or "")).strip()
+
+
+def keyword_hits_by_thematic(text: str) -> dict:
+    text_low = normalize_space(text).lower()
+    hits = {}
+    if not text_low:
+        return hits
+    for thematic, keywords in THEMATIC_KEYWORDS.items():
+        matched = [kw for kw in keywords if kw.lower() in text_low]
+        if matched:
+            hits[thematic] = sorted(set(matched), key=lambda x: (len(x), x))
+    return hits
+
+
+def thematic_assignments(primary_thematic: str, full_text: str) -> tuple[list, dict]:
+    hits = keyword_hits_by_thematic(full_text)
+    ordered = []
+    if primary_thematic:
+        ordered.append(primary_thematic)
+    for thematic, kws in sorted(hits.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+        if thematic not in ordered:
+            ordered.append(thematic)
+    return ordered, hits
+
 
 # ── Parsing date ──────────────────────────────────────────────────────────────
 
@@ -428,6 +509,7 @@ def parse_card(page, full_url: str) -> dict:
         "opening_raw":    pick(RE_OPEN, text),
         "deadline_raw":   dead,
         "url":            full_url,
+        "full_text":      "",
         "_needs_enrich":  False,
     }
 
@@ -470,6 +552,12 @@ def _enrich_one(page, row: dict) -> bool:
     try:
         page.goto(url, wait_until="domcontentloaded", timeout=30_000)
         page.wait_for_timeout(2500)
+        try:
+            body_text = normalize_space(page.locator("body").inner_text())
+            if body_text:
+                row["full_text"] = body_text
+        except Exception:
+            pass
     except Exception as e:
         print(f"    [ERR goto] {e}", flush=True)
     finally:
@@ -559,6 +647,8 @@ def to_call(row: dict) -> dict:
 
     opening_raw  = row.get("opening_raw") or ""
     deadline_raw = row.get("deadline_raw") or ""
+    full_text = normalize_space(row.get("full_text") or "")
+    multi_thematic, keyword_hits = thematic_assignments(thematic, full_text)
 
     return {
         "name":             row.get("name") or "",
@@ -575,6 +665,9 @@ def to_call(row: dict) -> dict:
         "url":              url,
         "is_mission":       is_mission,
         "beneficiary_hint": beneficiary_hint(action, prog_raw, u_benef),
+        "full_text":        full_text,
+        "multi_thematic":   multi_thematic,
+        "keyword_hits":     keyword_hits,
     }
 
 # ── Changelog ────────────────────────────────────────────────────────────────
@@ -804,3 +897,4 @@ if __name__ == "__main__":
     parser.add_argument("--out", default="calls.json", help="Percorso output JSON")
     args = parser.parse_args()
     main(Path(args.out))
+
