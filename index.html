@@ -303,7 +303,23 @@
       btn.classList.toggle('active', isActive);
     });
   }
-  function textForSearch(call){ return lower([call.full_text, call.name, call.programme, call.cluster_label, call.thematic_cluster, call.action, call.budget].filter(Boolean).join(' ')); }
+  // Boilerplate phrases in scraped full_text that are navigation/ToC noise, not topic signals
+  const BOILERPLATE_PATTERNS = [
+    /food,\s*bioeconomy,\s*natural resources,\s*agriculture\s*and\s*environment/gi,
+    /eu policies on climate,\s*environment,\s*transport,\s*agriculture\s*and\s*secure society/gi,
+    /main work programme[^.]{0,120}food[^.]{0,120}/gi,
+    /main work programme[^.]{0,120}european innovation[^.]{0,120}/gi,
+    /this site uses cookies[^.]{0,200}/gi,
+    /accept (all )?cookies[^.]{0,80}/gi,
+    /eu funding & tenders portal[^.]{0,80}/gi,
+    /home funding calls for proposals[^.]{0,80}/gi,
+  ];
+  function stripBoilerplate(text) {
+    let t = String(text || '');
+    BOILERPLATE_PATTERNS.forEach(p => { t = t.replace(p, ' '); });
+    return t;
+  }
+  function textForSearch(call){ return lower(stripBoilerplate([call.full_text, call.name, call.programme, call.cluster_label, call.thematic_cluster, call.action, call.budget].filter(Boolean).join(' '))); }
   function titleHasSpecial(title){ const t=lower(title); return TITLE_SPECIAL_KEYWORDS.some(k => new RegExp(`(^|[^a-z])${escapeRegExp(k)}([^a-z]|$)`, 'i').test(t)); }
   function escapeRegExp(s){ return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
   function keywordHits(text, thematic){
