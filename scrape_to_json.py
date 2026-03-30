@@ -463,6 +463,84 @@ def extract_links(page):
             out.append(full)
     return out
 
+
+# ── Budget extraction dal dettaglio topic ─────────────────────────────────────
+
+def topic_id_from_url(url: str) -> str:
+    s = (url or "").split("?")[0]
+    for marker in ["/topic-details/", "/competitive-calls-cs/"]:
+        i = s.lower().find(marker)
+        if i >= 0:
+            return s[i + len(marker):]
+    return s.rsplit("/", 1)[-1] if s else ""
+
+def extract_budget_per_project(page, topic_id: str) -> str | None:
+    """
+    Versione 'Cacciatore': usa un match corto dell'ID topic e forza lo scroll
+    per favorire il rendering lazy delle tabelle nella sezione
+    'Topic conditions and documents'.
+    """
+    if not topic_id:
+        return None
+
+    parts = topic_id.split("?")[0].split("-")
+    target_match = "-".join(parts[-2:]) if len(parts) > 1 else parts[-1]
+
+    try:
+        # 1. Espansione sezione
+        section_btn = page.locator("button:has-text('Topic conditions and documents')").first
+        if section_btn.count() > 0:
+            section_btn.scroll_into_view_if_needed()
+            expanded = section_btn.get_attribute("aria-expanded")
+            if expanded == "false":
+                section_btn.click(force=True)
+                page.wait_for_timeout(3000)
+
+        # 2. Scroll verso la riga target per forzare il lazy rendering
+        row_locator = page.locator(f"tr:has-text('{target_match}'), .wt-table-row:has-text('{target_match}')").first
+        if row_locator.count() > 0:
+            row_locator.scroll_into_view_if_needed()
+            page.wait_for_timeout(1000)
+
+        # 3. Analisi JS della riga
+        budget = page.evaluate(
+            """
+            (shortId) => {
+                const allElements = Array.from(document.querySelectorAll('tr, .wt-table-row'));
+                const targetRow = allElements.find(el => (el.innerText || '').includes(shortId));
+
+                if (!targetRow) return null;
+
+                const cells = Array.from(targetRow.querySelectorAll('td, .wt-table-cell'))
+                    .map(c => (c.innerText || '').trim())
+                    .filter(Boolean);
+
+                const candidates = cells.filter(txt => {
+                    const hasMoney =
+                        txt.includes('€') ||
+                        /\\beur\\b/i.test(txt) ||
+                        /\\bmillion\\b/i.test(txt) ||
+                        /\\bmeur\\b/i.test(txt);
+                    const isDate = /202[0-9]/.test(txt) && txt.length < 20;
+                    return hasMoney && !isDate;
+                });
+
+                if (!candidates.length) return null;
+
+                const specific = candidates.find(b => /around|to|between/i.test(b));
+                return specific || candidates[candidates.length - 1];
+            }
+            """,
+            target_match,
+        )
+
+        if budget:
+            return re.sub(r"\s+", " ", str(budget)).strip()
+        return None
+
+    except Exception:
+        return None
+
 # ── Parsing card dalla lista ──────────────────────────────────────────────────
 
 def parse_card(page, full_url: str) -> dict:
@@ -536,6 +614,14 @@ def _enrich_one(page, row: dict) -> bool:
         except Exception:
             body_text = ""
         row["full_text"] = clean(body_text) or ""
+
+        try:
+            topic_id = topic_id_from_url(url)
+            budget = extract_budget_per_project(page, topic_id)
+            if budget:
+                row["budget"] = budget
+        except Exception:
+            pass
     except Exception as e:
         print(f"    [ERR goto] {e}", flush=True)
     finally:
@@ -637,6 +723,7 @@ def to_call(row: dict) -> dict:
         "cluster_label":    cluster_label,
         "thematic_cluster": thematic,
         "action":           action,
+        "budget":           row.get("budget") or "",
         "opening":          opening_raw,
         "opening_iso":      parse_date_iso(opening_raw),
         "deadline":         deadline_raw,
@@ -877,5 +964,6 @@ if __name__ == "__main__":
     parser.add_argument("--out", default="calls.json", help="Percorso output JSON")
     args = parser.parse_args()
     main(Path(args.out))
+
 
 
