@@ -593,14 +593,14 @@
           <div class="budget-range-wrap">
             <div class="budget-range-top">
               <label class="field-label" style="margin:0">Range [EUR]</label>
-              <div class="budget-range-values"><span id="budget_min_label">0 EUR</span> – <span id="budget_max_label">1.000.000 EUR</span></div>
+              <div class="budget-range-values"><span id="budget_min_label">0 EUR</span> – <span id="budget_max_label">20.000.000 EUR</span></div>
             </div>
             <div class="budget-slider-box">
               <div class="budget-track"></div>
               <div id="budget_range_fill" class="budget-range-fill"></div>
               <div class="budget-sliders">
-               <input id="budget_min" type="range" min="0" max="20000000" step="50000" value="0" />
-              <input id="budget_max" type="range" min="0" max="20000000" step="50000" value="20000000" />
+                <input id="budget_min" type="range" min="0" max="20000000" step="50000" value="0" />
+                <input id="budget_max" type="range" min="0" max="20000000" step="50000" value="20000000" />
               </div>
             </div>
             <div class="budget-presets">
@@ -608,8 +608,7 @@
               <button type="button" class="budget-chip" data-min="500000" data-max="1000000">0,5M – 1M</button>
               <button type="button" class="budget-chip" data-min="1000000" data-max="3000000">1M – 3M</button>
               <button type="button" class="budget-chip" data-min="3000000" data-max="10000000">3M – 10M</button>
-              <button type="button" class="budget-chip" data-min="10000000" data-max="20000000">> 10M</button>
-              </div>
+              <button type="button" class="budget-chip" data-min="10000000" data-max="20000000">Più di 10M</button>
             </div>
           </div>
         </div>
@@ -906,7 +905,7 @@
   function applyLiveKeyword(results){
     const q = lower(keywordFilterEl.value || '').trim();
     const { minBudget, maxBudget } = getBudgetRange();
-    const budgetFilterActive = !(minBudget === 0 && maxBudget === 1000000);
+    const budgetFilterActive = !(minBudget === 0 && maxBudget === 20000000);
     return results.filter(c => {
       if (q && !c._search.includes(q)) return false;
       if (budgetFilterActive) {
@@ -1030,7 +1029,7 @@
   });
   budgetPresetEls.forEach(btn => btn.addEventListener('click', () => {
     budgetMinEl.value = btn.dataset.min || '0';
-    budgetMaxEl.value = btn.dataset.max || '1000000';
+    budgetMaxEl.value = btn.dataset.max || '20000000';
     updateBudgetUi();
     if (lastAnswers) { visibleCount = PAGE_SIZE; renderCalls(); }
   }));
@@ -1050,7 +1049,7 @@
   });
   loadMoreBtn.addEventListener('click', () => { visibleCount += PAGE_SIZE; renderCalls(); });
   downloadResultsBtn.addEventListener('click', () => { if (lastAnswers) downloadCsv(); });
-  resetBtn.addEventListener('click', () => { form.reset(); secondaryEl.value=''; resultsSection.classList.add('hidden'); resultsEl.innerHTML=''; resultsFooterEl.classList.add('hidden'); keywordFilterEl.value=''; budgetMinEl.value='0'; budgetMaxEl.value='1000000'; updateBudgetUi(); });
+  resetBtn.addEventListener('click', () => { form.reset(); secondaryEl.value=''; resultsSection.classList.add('hidden'); resultsEl.innerHTML=''; resultsFooterEl.classList.add('hidden'); keywordFilterEl.value=''; budgetMinEl.value='0'; budgetMaxEl.value='20000000'; updateBudgetUi(); });
   updateBudgetUi();
 
   async function loadCalls(){
