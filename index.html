@@ -323,15 +323,15 @@
     call._budget_value = parseBudgetValue(call.budget);
     call._search = textForSearch(call);
     call._special = Boolean(call.is_special_basic_research || titleHasSpecial(call.name));
-    call._keyword_hits = call.keyword_hits && typeof call.keyword_hits === 'object' ? call.keyword_hits : {};
-    if (!Object.keys(call._keyword_hits).length) {
-      THEMATIC_OPTIONS.forEach(t => {
-        if (t === SPECIAL) return;
-        const hits = keywordHits(call._search, t);
-        if (hits.length) call._keyword_hits[t] = hits;
-      });
-      if (call._special) call._keyword_hits[SPECIAL] = TITLE_SPECIAL_KEYWORDS.filter(k => lower(call.name).includes(k));
-    }
+    // Always recompute keyword hits from the browser KEYWORDS map
+    // (ignores pre-baked keyword_hits in JSON, which may use stale/broader keywords)
+    call._keyword_hits = {};
+    THEMATIC_OPTIONS.forEach(t => {
+      if (t === SPECIAL) return;
+      const hits = keywordHits(call._search, t);
+      if (hits.length) call._keyword_hits[t] = hits;
+    });
+    if (call._special) call._keyword_hits[SPECIAL] = TITLE_SPECIAL_KEYWORDS.filter(k => lower(call.name).includes(k));
     return call;
   }
   function isAssignedTo(call, thematic){
