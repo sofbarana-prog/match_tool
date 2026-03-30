@@ -103,7 +103,7 @@
     .form-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 20px;
       overflow: hidden;
       box-shadow: 0 2px 12px rgba(30,60,140,0.07), 0 1px 3px rgba(30,60,140,0.05);
     }
@@ -157,7 +157,7 @@
       padding: 11px 14px;
       background: var(--surface2);
       border: 1px solid var(--border-strong);
-      border-radius: 3px;
+      border-radius: 14px;
       color: var(--text);
       font-family: inherit;
       font-size: 0.92rem;
@@ -188,7 +188,7 @@
       padding: 9px 16px;
       background: var(--surface2);
       border: 1px solid var(--border-strong);
-      border-radius: 3px;
+      border-radius: 999px;
       cursor: pointer;
       font-size: 0.88rem;
       color: var(--muted);
@@ -293,16 +293,24 @@
       border-radius: 999px;
       font-size: 0.88rem;
     }
-    .btn-secondary:hover { color: var(--text); border-color: var(--accent); color: var(--accent); }
+    .btn-secondary:hover { color: var(--accent); border-color: var(--accent); }
+
     .btn-download {
-      background: transparent;
-      color: var(--muted);
-      border: 1px solid var(--border-strong);
-      padding: 9px 16px;
+      background: var(--accent);
+      color: #fff;
+      border: 1px solid var(--accent);
+      padding: 10px 18px;
       border-radius: 999px;
       font-size: 0.82rem;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.18);
     }
-    .btn-download:hover { color: var(--accent); border-color: var(--accent); }
+    .btn-download:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(37,99,235,0.28);
+    }
 
     /* ── RESULTS SECTION ── */
     .results { margin-top: 48px; }
@@ -360,7 +368,7 @@
       padding: 5px 12px;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 2px;
+      border-radius: 999px;
       font-size: 0.75rem;
       color: var(--muted);
       letter-spacing: 0.03em;
@@ -371,13 +379,16 @@
     .call {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 20px;
       margin-bottom: 12px;
       padding: 24px 28px 20px;
       position: relative;
       transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
       overflow: hidden;
       box-shadow: 0 1px 4px rgba(30,60,140,0.06);
+    }
+    .call.call-clickable {
+      cursor: pointer;
     }
     .call::before {
       content: '';
@@ -414,7 +425,7 @@
       display: inline-flex;
       align-items: center;
       padding: 4px 10px;
-      border-radius: 2px;
+      border-radius: 999px;
       font-size: 0.72rem;
       font-weight: 700;
       letter-spacing: 0.06em;
@@ -436,7 +447,7 @@
       padding: 3px 9px;
       background: var(--tag-bg);
       border: 1px solid var(--tag-border);
-      border-radius: 2px;
+      border-radius: 999px;
       font-size: 0.72rem;
       color: var(--muted);
       letter-spacing: 0.03em;
@@ -445,12 +456,14 @@
     /* ── LINK ── */
     .call-link { margin-top: 12px; font-size: 0.78rem; }
     .call-link a {
-      color: var(--muted);
+      color: var(--accent);
       text-decoration: none;
       word-break: break-all;
       transition: color 0.1s;
+      position: relative;
+      z-index: 2;
     }
-    .call-link a:hover { color: var(--accent); text-decoration: underline; }
+    .call-link a:hover { color: var(--accent-hover); text-decoration: underline; }
 
     /* ── FOOTER ── */
     .results-footer {
@@ -475,7 +488,7 @@
       color: var(--muted);
       font-size: 0.9rem;
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 20px;
     }
 
     .hidden { display: none !important; }
@@ -525,6 +538,13 @@
 
     /* ── DIVIDER LINE ── */
     .field-divider { height: 1px; background: var(--border); margin: 0; }
+
+    .download-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
 <body>
@@ -639,7 +659,10 @@
         <div class="results-title">Risultati</div>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
           <div id="statsCount" class="stats-count"></div>
-          <button id="downloadResultsBtn" type="button" class="btn-download">↓ CSV</button>
+          <div class="download-group">
+            <button id="downloadResultsBtn" type="button" class="btn-download">↓ Scarica CSV</button>
+            <button id="downloadExcelBtn" type="button" class="btn-download">↓ Scarica Excel</button>
+          </div>
         </div>
       </div>
 
@@ -703,6 +726,7 @@
   const resultsProgressEl = document.getElementById('resultsProgress');
   const loadMoreBtn = document.getElementById('loadMoreBtn');
   const downloadResultsBtn = document.getElementById('downloadResultsBtn');
+  const downloadExcelBtn = document.getElementById('downloadExcelBtn');
   const keywordFilterEl = document.getElementById('keyword_filter');
   const budgetMinEl = document.getElementById('budget_min');
   const budgetMaxEl = document.getElementById('budget_max');
@@ -781,7 +805,6 @@
       btn.classList.toggle('active', isActive);
     });
   }
-  // Boilerplate phrases in scraped full_text that are navigation/ToC noise, not topic signals
   const BOILERPLATE_PATTERNS = [
     /food,\s*bioeconomy,\s*natural resources,\s*agriculture\s*and\s*environment/gi,
     /eu policies on climate,\s*environment,\s*transport,\s*agriculture\s*and\s*secure society/gi,
@@ -817,8 +840,6 @@
     call._budget_value = parseBudgetValue(call.budget);
     call._search = textForSearch(call);
     call._special = Boolean(call.is_special_basic_research || titleHasSpecial(call.name));
-    // Always recompute keyword hits from the browser KEYWORDS map
-    // (ignores pre-baked keyword_hits in JSON, which may use stale/broader keywords)
     call._keyword_hits = {};
     THEMATIC_OPTIONS.forEach(t => {
       if (t === SPECIAL) return;
@@ -857,22 +878,14 @@
 
     let bucket = 99;
     if (!secondary) {
-      // Senza area secondaria: solo 2 livelli
       if (primaryAssigned) bucket = 1;
       else if (primaryHits.length) bucket = 2;
     } else {
-      // Con area secondaria: logica a 6 bucket
-      // Bucket 1: assegnata al PRIMARIO + keyword della SECONDARIA nel testo
       if (primaryAssigned && secondaryHits.length) bucket = 1;
-      // Bucket 2: assegnata al SECONDARIO + keyword della PRIMARIA nel testo
       else if (secondaryAssigned && primaryHits.length) bucket = 2;
-      // Bucket 3: altra area + keyword di ENTRAMBE primario e secondario
       else if (otherAssigned && primaryHits.length && secondaryHits.length) bucket = 3;
-      // Bucket 4: assegnata al PRIMARIO ma senza keyword della secondaria
       else if (primaryAssigned) bucket = 4;
-      // Bucket 5: assegnata al SECONDARIO ma senza keyword della primaria
       else if (secondaryAssigned) bucket = 5;
-      // Bucket 6: altra area con keyword solo del primario O solo del secondario
       else if (otherAssigned && (primaryHits.length || secondaryHits.length)) bucket = 6;
     }
     if (bucket === 99) return null;
@@ -970,7 +983,17 @@
       const tags = [];
       call._primaryHits.forEach(t => tags.push(`<span class="tag">${esc(t)}</span>`));
       call._secondaryHits.forEach(t => tags.push(`<span class="tag">${esc(t)}</span>`));
-      html += `<article class="call" data-bucket="${call._bucket||6}"><h3>${esc(call.name || '(senza nome)')}</h3><div class="meta">${meta}</div><div class="matchbadges">${badges.join('')}</div>${tags.length ? `<div class="tags">${tags.join('')}</div>` : ''}${call.url ? `<div class="call-link"><a href="${encodeURI(call.url)}" target="_blank" rel="noopener noreferrer">${esc(call.url)}</a></div>` : ''}</article>`;
+
+      const urlAttr = call.url ? ` data-url="${esc(call.url)}"` : '';
+      const clickableClass = call.url ? ' call-clickable' : '';
+
+      html += `<article class="call${clickableClass}" data-bucket="${call._bucket||6}"${urlAttr}>
+        <h3>${esc(call.name || '(senza nome)')}</h3>
+        <div class="meta">${meta}</div>
+        <div class="matchbadges">${badges.join('')}</div>
+        ${tags.length ? `<div class="tags">${tags.join('')}</div>` : ''}
+        ${call.url ? `<div class="call-link"><a href="${encodeURI(call.url)}" target="_blank" rel="noopener noreferrer">${esc(call.url)}</a></div>` : ''}
+      </article>`;
     });
     resultsEl.innerHTML = html;
     const shown = Math.min(visibleCount, filtered.length);
@@ -982,16 +1005,58 @@
     primaryEl.innerHTML = '<option value="" selected disabled>Seleziona…</option>' + THEMATIC_OPTIONS.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
     secondaryEl.innerHTML = '<option value="">Nessuna</option>' + THEMATIC_OPTIONS.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
   }
-  function downloadCsv(){
+
+  function getExportRows(){
     const filtered = applyLiveKeyword(lastGeneratedResults);
-    const rows = filtered.map(c => ({
-      name:c.name||'', programme:c.programme||'', thematic_cluster:c.thematic_cluster||'', cluster_label:c.cluster_label||'',
-      action:c.action||'', budget:c.budget||'', opening:c.opening||'', deadline:c.deadline||'', url:c.url||'', bucket:c._bucket||'', score:c._score||''
+    return filtered.map(c => ({
+      name:c.name||'',
+      programme:c.programme||'',
+      thematic_cluster:c.thematic_cluster||'',
+      cluster_label:c.cluster_label||'',
+      action:c.action||'',
+      budget:c.budget||'',
+      opening:c.opening||'',
+      deadline:c.deadline||'',
+      url:c.url||'',
+      bucket:c._bucket||'',
+      score:c._score||''
     }));
+  }
+
+  function downloadCsv(){
+    const rows = getExportRows();
     const headers = Object.keys(rows[0] || {name:'',programme:'',thematic_cluster:'',cluster_label:'',action:'',opening:'',deadline:'',url:'',bucket:'',score:''});
     const csv = [headers.join(',')].concat(rows.map(r => headers.map(h => '"' + String(r[h] ?? '').replace(/"/g,'""') + '"').join(','))).join('\n');
     const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'results.csv'; a.click(); URL.revokeObjectURL(a.href);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'results.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function downloadExcel(){
+    const rows = getExportRows();
+    const headers = Object.keys(rows[0] || {name:'',programme:'',thematic_cluster:'',cluster_label:'',action:'',opening:'',deadline:'',url:'',bucket:'',score:''});
+    const table = `
+      <table>
+        <thead>
+          <tr>${headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => `<tr>${headers.map(h => `<td>${esc(r[h] ?? '')}</td>`).join('')}</tr>`).join('')}
+        </tbody>
+      </table>
+    `;
+    const blob = new Blob(
+      ['\ufeff' + table],
+      { type: 'application/vnd.ms-excel;charset=utf-8;' }
+    );
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'results.xls';
+    a.click();
+    URL.revokeObjectURL(a.href);
   }
 
   form.addEventListener('submit', (e) => {
@@ -1016,40 +1081,70 @@
     renderCalls();
     resultsSection.scrollIntoView({behavior:'smooth', block:'start'});
   });
+
   keywordFilterEl.addEventListener('input', () => { if (lastAnswers) { visibleCount = PAGE_SIZE; renderCalls(); } });
+
   budgetMinEl.addEventListener('input', () => {
     if (Number(budgetMinEl.value) > Number(budgetMaxEl.value)) budgetMinEl.value = budgetMaxEl.value;
     updateBudgetUi();
     if (lastAnswers) { visibleCount = PAGE_SIZE; renderCalls(); }
   });
+
   budgetMaxEl.addEventListener('input', () => {
     if (Number(budgetMaxEl.value) < Number(budgetMinEl.value)) budgetMaxEl.value = budgetMinEl.value;
     updateBudgetUi();
     if (lastAnswers) { visibleCount = PAGE_SIZE; renderCalls(); }
   });
+
   budgetPresetEls.forEach(btn => btn.addEventListener('click', () => {
     budgetMinEl.value = btn.dataset.min || '0';
     budgetMaxEl.value = btn.dataset.max || '20000000';
     updateBudgetUi();
     if (lastAnswers) { visibleCount = PAGE_SIZE; renderCalls(); }
   }));
+
   const sortRelevanceBtn = document.getElementById('sortRelevance');
   const sortDeadlineBtn = document.getElementById('sortDeadline');
+
   sortRelevanceBtn.addEventListener('click', () => {
     sortMode = 'relevance';
     sortRelevanceBtn.classList.add('active');
     sortDeadlineBtn.classList.remove('active');
     if (lastAnswers) { visibleCount = PAGE_SIZE; renderCalls(); }
   });
+
   sortDeadlineBtn.addEventListener('click', () => {
     sortMode = 'deadline';
     sortDeadlineBtn.classList.add('active');
     sortRelevanceBtn.classList.remove('active');
     if (lastAnswers) { visibleCount = PAGE_SIZE; renderCalls(); }
   });
+
   loadMoreBtn.addEventListener('click', () => { visibleCount += PAGE_SIZE; renderCalls(); });
   downloadResultsBtn.addEventListener('click', () => { if (lastAnswers) downloadCsv(); });
-  resetBtn.addEventListener('click', () => { form.reset(); secondaryEl.value=''; resultsSection.classList.add('hidden'); resultsEl.innerHTML=''; resultsFooterEl.classList.add('hidden'); keywordFilterEl.value=''; budgetMinEl.value='0'; budgetMaxEl.value='20000000'; updateBudgetUi(); });
+  downloadExcelBtn.addEventListener('click', () => { if (lastAnswers) downloadExcel(); });
+
+  resultsEl.addEventListener('click', (e) => {
+    const link = e.target.closest('a');
+    if (link) return;
+    const card = e.target.closest('.call.call-clickable');
+    if (!card) return;
+    const url = card.dataset.url;
+    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+  });
+
+  resetBtn.addEventListener('click', () => {
+    form.reset();
+    secondaryEl.value='';
+    resultsSection.classList.add('hidden');
+    resultsEl.innerHTML='';
+    resultsFooterEl.classList.add('hidden');
+    keywordFilterEl.value='';
+    budgetMinEl.value='0';
+    budgetMaxEl.value='20000000';
+    updateBudgetUi();
+  });
+
   updateBudgetUi();
 
   async function loadCalls(){
