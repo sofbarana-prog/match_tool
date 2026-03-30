@@ -599,16 +599,17 @@
               <div class="budget-track"></div>
               <div id="budget_range_fill" class="budget-range-fill"></div>
               <div class="budget-sliders">
-                <input id="budget_min" type="range" min="0" max="10M" step="10000" value="0" />
-                <input id="budget_max" type="range" min="0" max="10M" step="10000" value="10000000" />
+               <input id="budget_min" type="range" min="0" max="20000000" step="50000" value="0" />
+              <input id="budget_max" type="range" min="0" max="20000000" step="50000" value="20000000" />
               </div>
             </div>
             <div class="budget-presets">
-              <button type="button" class="budget-chip" data-min="0" data-max="500000">0 – 500k</button>
-              <button type="button" class="budget-chip" data-min="500k" data-max="2500000">50k – 2.5M</button>
-              <button type="button" class="budget-chip" data-min="2.5M" data-max="5M">2.5M – 5M</button>
-              <button type="button" class="budget-chip" data-min="5M" data-max="10M">5M – 10M</button>
-              <button type="button" class="budget-chip" data-min="0" data-max="10M">Qualsiasi</button>
+              <button type="button" class="budget-chip" data-min="0" data-max="500000">0 – 0,5M</button>
+              <button type="button" class="budget-chip" data-min="500000" data-max="1000000">0,5M – 1M</button>
+              <button type="button" class="budget-chip" data-min="1000000" data-max="3000000">1M – 3M</button>
+              <button type="button" class="budget-chip" data-min="3000000" data-max="10000000">3M – 10M</button>
+              <button type="button" class="budget-chip" data-min="10000000" data-max="20000000">> 10M</button>
+              </div>
             </div>
           </div>
         </div>
@@ -758,7 +759,7 @@
     let minBudget = parseBudgetInput(budgetMinEl.value);
     let maxBudget = parseBudgetInput(budgetMaxEl.value);
     if (minBudget === null) minBudget = 0;
-    if (maxBudget === null) maxBudget = 1000000;
+    if (maxBudget === null) maxBudget = 20000000;
     if (minBudget > maxBudget) [minBudget, maxBudget] = [maxBudget, minBudget];
     return { minBudget, maxBudget };
   }
@@ -770,7 +771,7 @@
     if (budgetMaxLabelEl) budgetMaxLabelEl.textContent = formatBudget(maxBudget);
     if (budgetRangeFillEl) {
       const min = Number(budgetMinEl.min || 0);
-      const max = Number(budgetMinEl.max || 1000000);
+      const max = Number(budgetMinEl.max || 20000000);
       const left = ((minBudget - min) / (max - min)) * 100;
       const right = ((maxBudget - min) / (max - min)) * 100;
       budgetRangeFillEl.style.left = left + '%';
