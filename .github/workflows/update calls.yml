@@ -29,17 +29,6 @@ jobs:
         run: python scrape_to_json.py --out calls.json
         timeout-minutes: 90
 
-      - name: Scrape shared-management programmes → shared_programmes.json
-        run: python scrape_shared_programmes.py
-        timeout-minutes: 10
-
-      - name: Scrape innovation events → events.json
-        run: python scrape_events.py
-        timeout-minutes: 15
-
-      - name: Fix multi-budget fields
-        run: python fix_budgets.py --file calls.json
-
       - name: Commit updated files
         run: |
           git config user.name  "github-actions[bot]"
