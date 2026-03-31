@@ -1,0 +1,39 @@
+name: Test Git Commit Logic
+
+on:
+  workflow_dispatch: # Ti permette di avviarlo manualmente dalla tab "Actions"
+
+jobs:
+  test-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Simula modifica file
+        run: |
+          echo "Ultimo test: $(date)" > debug_log.txt
+          # Se preferisci testare su un file esistente:
+          # echo "// Update test $(date)" >> calls.json
+
+      - name: Commit updated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Aggiungiamo il file di test (o calls.json)
+          git add debug_log.txt
+          
+          if ! git diff --staged --quiet; then
+            git commit -m "test: verifica logica commit [$(date -u +%Y-%m-%d)]"
+            
+            # Pull con rebase prima del push
+            git pull --rebase origin main
+            
+            git push origin main
+          else
+            echo "Nessuna modifica rilevata"
+          fi
