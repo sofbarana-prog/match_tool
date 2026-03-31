@@ -33,7 +33,9 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main          # ← PRIMA del commit
+          git stash                              # ← metti da parte i file modificati
+          git pull --rebase origin main          # ← aggiorna dal remote
+          git stash pop                          # ← riapplica i file dello scraper
           git add calls.json changelog.md changelog_history.md shared_programmes.json events.json
           git diff --staged --quiet || git commit -m "chore: update calls + events [$(date -u +%Y-%m-%d)]"
           git push
