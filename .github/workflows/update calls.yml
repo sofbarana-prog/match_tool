@@ -2,8 +2,8 @@ name: Update EU Calls
 
 on:
   schedule:
-    - cron: "0 2 * * *"   # every night at 02:00 UTC
-  workflow_dispatch:
+    - cron: "0 2 * * *"   # ogni notte alle 02:00 UTC (04:00 ora italiana)
+  workflow_dispatch:       # run manuale dal tab Actions
 
 jobs:
   scrape-and-commit:
@@ -22,10 +22,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install playwright requests beautifulsoup4
+          pip install playwright
           playwright install chromium --with-deps
 
-      - name: Scrape EU direct-managed calls → calls.json
+      - name: Scrape EU calls → calls.json
         run: python scrape_to_json.py --out calls.json
         timeout-minutes: 90
 
@@ -33,9 +33,6 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git stash                              # ← metti da parte i file modificati
-          git pull --rebase origin main          # ← aggiorna dal remote
-          git stash pop                          # ← riapplica i file dello scraper
-          git add calls.json changelog.md changelog_history.md shared_programmes.json events.json
-          git diff --staged --quiet || git commit -m "chore: update calls + events [$(date -u +%Y-%m-%d)]"
+          git add calls.json changelog.md changelog_history.md
+          git diff --staged --quiet || git commit -m "chore: update calls [$(date -u +%Y-%m-%d)]"
           git push
