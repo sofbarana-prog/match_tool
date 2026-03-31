@@ -1,7 +1,7 @@
-name: Test Git Commit Logic
+name: Test Commit Push
 
 on:
-  workflow_dispatch: # Ti permette di avviarlo manualmente dalla tab "Actions"
+  workflow_dispatch:
 
 jobs:
   test-commit:
@@ -13,27 +13,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Simula modifica file
-        run: |
-          echo "Ultimo test: $(date)" > debug_log.txt
-          # Se preferisci testare su un file esistente:
-          # echo "// Update test $(date)" >> calls.json
+      - name: Create dummy file
+        run: echo "test $(date -u +%Y-%m-%dT%H:%M:%S)" > test_push.txt
 
-      - name: Commit updated files
+      - name: Commit and push
         run: |
-          git config user.name "github-actions[bot]"
+          git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Aggiungiamo il file di test (o calls.json)
-          git add debug_log.txt
-          
-          if ! git diff --staged --quiet; then
-            git commit -m "test: verifica logica commit [$(date -u +%Y-%m-%d)]"
-            
-            # Pull con rebase prima del push
-            git pull --rebase origin main
-            
-            git push origin main
-          else
-            echo "Nessuna modifica rilevata"
-          fi
+          git pull --rebase origin main
+          git add test_push.txt
+          git commit -m "test: verify commit-push works [$(date -u +%Y-%m-%d)]"
+          git push
