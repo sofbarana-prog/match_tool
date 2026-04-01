@@ -910,9 +910,8 @@ def main(out_path: Path):
         # ── Passo 1: lista ────────────────────────────────────────────────────
         page.goto(LIST_URL.format(page=1, ps=PAGE_SIZE),
                   wait_until="domcontentloaded", timeout=90000)
-    
-page.wait_for_timeout(3000)   # ← aumenta da 1500 a 3000
-total = read_total(page)
+        page.wait_for_timeout(3000)   # ← aumenta da 1500 a 3000
+        total = read_total(page)
 
         total = read_total(page)
         if total is None:
