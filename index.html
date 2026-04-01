@@ -916,11 +916,12 @@
     });
   }
   function applyLiveKeyword(results){
-    const q = lower(keywordFilterEl.value || '').trim();
+    const raw = lower(keywordFilterEl.value || '').trim();
+    const terms = raw.split(/\s+/).filter(Boolean);
     const { minBudget, maxBudget } = getBudgetRange();
     const budgetFilterActive = !(minBudget === 0 && maxBudget === 20000000);
     return results.filter(c => {
-      if (q && !c._search.includes(q)) return false;
+      if (terms.length && !terms.every(t => c._search.includes(t))) return false;
       if (budgetFilterActive) {
         if (!Number.isFinite(c._budget_value)) return false;
         if (c._budget_value < minBudget) return false;
@@ -1082,7 +1083,13 @@
     resultsSection.scrollIntoView({behavior:'smooth', block:'start'});
   });
 
-  keywordFilterEl.addEventListener('input', () => { if (lastAnswers) { visibleCount = PAGE_SIZE; renderCalls(); } });
+  let _kwTimer = null;
+  keywordFilterEl.addEventListener('input', () => {
+    clearTimeout(_kwTimer);
+    _kwTimer = setTimeout(() => {
+      if (lastAnswers) { visibleCount = PAGE_SIZE; renderCalls(); }
+    }, 180);
+  });
 
   budgetMinEl.addEventListener('input', () => {
     if (Number(budgetMinEl.value) > Number(budgetMaxEl.value)) budgetMinEl.value = budgetMaxEl.value;
