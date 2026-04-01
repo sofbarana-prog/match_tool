@@ -921,7 +921,10 @@
     const { minBudget, maxBudget } = getBudgetRange();
     const budgetFilterActive = !(minBudget === 0 && maxBudget === 20000000);
     return results.filter(c => {
-      if (terms.length && !terms.every(t => c._search.includes(t))) return false;
+      if (terms.length) {
+        const title = lower(c.name || '');
+        if (!terms.every(t => title.includes(t))) return false;
+      }
       if (budgetFilterActive) {
         if (!Number.isFinite(c._budget_value)) return false;
         if (c._budget_value < minBudget) return false;
