@@ -393,10 +393,45 @@ def wait_cookie_gone(page, max_ms=12000):
 def count_links(page):
     return page.locator(LINK_SELECTOR).count()
 
-def read_total(page):
-    txt = page.locator("body").inner_text()
-    m = RE_TOTAL.search(txt or "")
-    return int(m.group(1)) if m else None
+def read_total(page, timeout_ms=30000):
+    """
+    Aspetta e legge il numero totale di risultati dalla pagina.
+    Prova più pattern per coprire eventuali variazioni del portale EU.
+    """
+    PATTERNS = [
+        re.compile(r"(\d[\d,\.]*)\s*item\s*\(?s\)?\s*found",      re.IGNORECASE),
+        re.compile(r"(\d[\d,\.]*)\s*results?\s*found",             re.IGNORECASE),
+        re.compile(r"(\d[\d,\.]*)\s*opportunit\w+\s*found",        re.IGNORECASE),
+        re.compile(r"(\d[\d,\.]*)\s*calls?\s*found",               re.IGNORECASE),
+        re.compile(r"found\s+(\d[\d,\.]*)\s*results?",             re.IGNORECASE),
+        re.compile(r"Total[:\s]+(\d[\d,\.]*)",                     re.IGNORECASE),
+        re.compile(r"(\d[\d,\.]*)\s*result",                       re.IGNORECASE),  # fallback largo
+    ]
+
+    start = time.time()
+    while (time.time() - start) * 1000 < timeout_ms:
+        try:
+            txt = page.locator("body").inner_text()
+        except Exception:
+            txt = ""
+
+        for pat in PATTERNS:
+            m = pat.search(txt or "")
+            if m:
+                raw = m.group(1).replace(",", "").replace(".", "")
+                print(f" Contatore trovato con pattern '{pat.pattern}': {raw}")
+                return int(raw)
+
+        page.wait_for_timeout(1000)
+
+    # Debug: stampa le prime 2000 caratteri del body per capire cosa c'è
+    try:
+        snippet = page.locator("body").inner_text()[:2000]
+        print(f"⚠️  Testo body (primi 2000 char):\n{snippet}")
+    except Exception as e:
+        print(f"⚠️  Impossibile leggere il body: {e}")
+
+    return None
 
 def scroll_until(page, expected, max_ms=50000):
     start = time.time()
@@ -875,9 +910,9 @@ def main(out_path: Path):
         # ── Passo 1: lista ────────────────────────────────────────────────────
         page.goto(LIST_URL.format(page=1, ps=PAGE_SIZE),
                   wait_until="domcontentloaded", timeout=90000)
-        page.wait_for_timeout(1500)
-        accept_cookies(page)
-        wait_cookie_gone(page)
+    
+page.wait_for_timeout(3000)   # ← aumenta da 1500 a 3000
+total = read_total(page)
 
         total = read_total(page)
         if total is None:
